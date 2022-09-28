@@ -90,7 +90,7 @@ void cutUnwarpedTest(){
 
 int main(int argc, char *argv[])
 {
-//  Show();
-  test();
+  Show();
+//  test();
 //  cutUnwarpedTest();
 }

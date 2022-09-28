@@ -17,6 +17,7 @@ private:
   Eigen::ArrayXXd v;
   Mat cutted;
   Mat imgMask;
+  Mat imgMask2, imgMask3;
   Mat xMapArray, yMapArray;
   Mat unwarpImg;
 

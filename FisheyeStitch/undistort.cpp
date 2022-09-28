@@ -19,7 +19,7 @@ void Undistort::cutFisheye(Mat &in, Mat &out){
 
   imgMask.create(in.rows, in.cols, CV_8UC3);
   imgMask.setTo(0);
-  cv::circle(imgMask, Point(in.cols/2 - 60, in.rows/2 + 10), 700, CV_RGB(255,255,255), -1);
+  cv::circle(imgMask, Point(in.cols/2 - 30, in.rows/2 + 30), 715, CV_RGB(255,255,255), -1);
   bitwise_and(in, imgMask, in);
 
   Mat gray;
@@ -248,7 +248,7 @@ void Undistort::CalcRcCutFunc(Mat &in){
   Mat thresh;
   threshold(gray, thresh,15,255,THRESH_BINARY);
 
-  imshow("thresh", thresh);
+//  imshow("thresh", thresh);
 //  waitKey();
 
   vector<vector<Point>> contours;
@@ -275,7 +275,9 @@ void Undistort::InitMartix(Mat& in, int Threshold){
 #if USEMASK
   imgMask.create(in.rows, in.cols, CV_8UC3);
   imgMask.setTo(0);
-  cv::circle(imgMask, Point(in.cols/2 - 60, in.rows/2 + 10), 700, CV_RGB(255,255,255), -1);
+//  cv::circle(imgMask, Point(in.cols/2 - 30, in.rows/2 + 30), 710, CV_RGB(255,255,255), -1);
+//  cv::circle(imgMask, Point(in.cols/2 + 20, in.rows/2 + 62), 710, CV_RGB(255,255,255), -1);
+  cv::circle(imgMask, Point(in.cols/2 + 5, in.rows/2 - 50), 710, CV_RGB(255,255,255), -1);
   bitwise_and(in, imgMask, in);
 #endif
 
