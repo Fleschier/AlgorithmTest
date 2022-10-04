@@ -16,10 +16,12 @@ private:
   Eigen::ArrayXXd u;
   Eigen::ArrayXXd v;
   Mat cutted;
+  vector<Mat> cutImgs;
   Mat imgMask;
-  Mat imgMask2, imgMask3;
+  vector<Mat> masks;
   Mat xMapArray, yMapArray;
   Mat unwarpImg;
+  vector<Mat> unwarpImgs;
 
   void CalcRcCutFunc(Mat& in);
 public:
@@ -27,7 +29,9 @@ public:
   void cutFisheye(Mat& in, Mat& out);
   void unDisFishEyeTest(Mat& in, Mat& out);
   void InitMartix(Mat& in, int Threshold = 20);
+  void InitMartix(Mat& in,int radius, int MaskIdx = 0,  int Threshold = 20);
   void MatrixUndistort(Mat& raw, Mat& dst);
+  void MatrixUndistort(Mat& raw, Mat& dst, int idx);
 };
 
 #endif // UNDISTORT_H

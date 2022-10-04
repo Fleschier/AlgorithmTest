@@ -13,6 +13,7 @@ SOURCES += main.cpp \
     undistort.cpp \
     test/fisheye_stitcher.cpp \
 #    test/stitch.cpp
+    fisheyestitcher.cpp
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -29,6 +30,7 @@ HEADERS += \
     undistort.h \
     test/fisheye_stitcher.hpp \
 #    test/input_parser.hpp
+    fisheyestitcher.h
 
 INCLUDEPATH += /usr/local/include/ \
             += /usr/local/include/opencv2/ \
