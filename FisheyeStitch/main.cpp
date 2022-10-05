@@ -1,10 +1,10 @@
 #include <QCoreApplication>
 
-#include"undistort.h"
+#include"fisheyestitcher.h"
 
 void Show(){
   Mat img;
-  VideoCapture cap(0);
+  VideoCapture cap("./cam2.mp4");
   if(!cap.isOpened()){
       printf("failed to open camera!\n");
       return;
@@ -34,7 +34,7 @@ void Show(){
 
 void test(){
   Undistort ud;
-  Mat img = imread("/home/cyx/programes/C++/fisheye/test_2592x1944.jpg");
+  Mat img = imread("/home/fleschier/Programs/CPP/fisheye/test_2592x1944.jpg");
   if(img.empty()){
       printf("read img failed!\n");
     }
@@ -88,9 +88,20 @@ void cutUnwarpedTest(){
   waitKey();
 }
 
+void stitcherTest(){
+    FishEyeStitcher stitcher;
+    if(!stitcher.run()){
+        return;
+    }
+
+    sleep(20);
+    stitcher.stop();
+}
+
 int main(int argc, char *argv[])
 {
-  Show();
-//  test();
-//  cutUnwarpedTest();
+    //  Show();
+    //  test();
+    //  cutUnwarpedTest();
+    stitcherTest();
 }

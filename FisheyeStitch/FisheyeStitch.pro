@@ -13,7 +13,8 @@ SOURCES += main.cpp \
     undistort.cpp \
     test/fisheye_stitcher.cpp \
 #    test/stitch.cpp
-    fisheyestitcher.cpp
+    fisheyestitcher.cpp \
+    threadpool/thread_pool.cpp
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -30,10 +31,14 @@ HEADERS += \
     undistort.h \
     test/fisheye_stitcher.hpp \
 #    test/input_parser.hpp
-    fisheyestitcher.h
+    fisheyestitcher.h \
+    threadpool/function_wrapper.h \
+    threadpool/join_threads.h \
+    threadpool/thread_pool.h \
+    threadpool/threadsafe_queue.h
 
-INCLUDEPATH += /usr/local/include/ \
-            += /usr/local/include/opencv2/ \
+INCLUDEPATH += /usr/local/include/opencv4/ \
+            += /usr/local/include/opencv4/opencv2/ \
             += /usr/include/eigen3/
 
 LIBS += /usr/local/lib/libopencv*.so

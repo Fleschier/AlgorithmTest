@@ -9,6 +9,7 @@ using namespace Eigen;
 #define OPENCV__ 1
 #define NEAREST !BILINEAR & !OPENCV__
 #define USEMASK 1
+#define DEBUGSHOW 0
 
 
 Undistort::Undistort(){
@@ -241,16 +242,17 @@ void Undistort::unDisFishEyeTest(Mat &in, Mat &out){
 
 }
 
-void Undistort::CalcRcCutFunc(Mat &in){
+void Undistort::CalcRcCutFunc(Mat &in, int idx){
   Mat gray;
   cvtColor(in, gray, COLOR_RGB2GRAY);
 
   Mat thresh;
   threshold(gray, thresh,15,255,THRESH_BINARY);
 
-//  imshow("thresh", thresh);
-//  waitKey();
-
+#if DEBUGSHOW
+  imshow("thresh", thresh);
+  waitKey();
+#endif
   vector<vector<Point>> contours;
   findContours(thresh, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
@@ -265,8 +267,16 @@ void Undistort::CalcRcCutFunc(Mat &in){
         }
     }
 
-  finalrc = boundingRect(MaxContour);
-  printf("rc: x:%d, y:%d, width:%d, height:%d\n", finalrc.x, finalrc.y, finalrc.width, finalrc.height);
+  if(idx < 0){
+      finalrc = boundingRect(MaxContour);
+      printf("finalrc: x:%d, y:%d, width:%d, height:%d\n", finalrc.x, finalrc.y, finalrc.width, finalrc.height);
+
+  }
+  else{
+      rcs[idx] = boundingRect(MaxContour);
+      printf("rcs[%d]: x:%d, y:%d, width:%d, height:%d\n",idx, rcs[idx].x, rcs[idx].y, rcs[idx].width, rcs[idx].height);
+
+  }
 
 }
 
@@ -276,8 +286,8 @@ void Undistort::InitMartix(Mat& in, int Threshold){
   imgMask.create(in.rows, in.cols, CV_8UC3);
   imgMask.setTo(0);
 //  cv::circle(imgMask, Point(in.cols/2 - 30, in.rows/2 + 30), 710, CV_RGB(255,255,255), -1);
-//  cv::circle(imgMask, Point(in.cols/2 + 20, in.rows/2 + 62), 710, CV_RGB(255,255,255), -1);
-  cv::circle(imgMask, Point(in.cols/2 + 5, in.rows/2 - 50), 710, CV_RGB(255,255,255), -1);
+  cv::circle(imgMask, Point(in.cols/2 + 15, in.rows/2 + 64), 710, CV_RGB(255,255,255), -1);
+//  cv::circle(imgMask, Point(in.cols/2 + 5, in.rows/2 - 50), 710, CV_RGB(255,255,255), -1);
   bitwise_and(in, imgMask, in);
 #endif
 
@@ -417,7 +427,7 @@ void Undistort::InitMartix(Mat& in, int Threshold){
       in(rc).copyTo(cutted);
       remap(cutted, dst, xMapArray, yMapArray, cv::INTER_LINEAR, cv::BORDER_CONSTANT,
             cv::Scalar(0, 0, 0));
-      CalcRcCutFunc(dst);
+      CalcRcCutFunc(dst, -1);
     }
 
   // init unwarpImg
@@ -425,50 +435,65 @@ void Undistort::InitMartix(Mat& in, int Threshold){
   unwarpImg.setTo(0);
 }
 
-void Undistort::InitMartix(Mat& in,int radius, int MaskIdx, int Threshold){
+void Undistort::InitMartix(Mat& in1,Mat& in2,Mat& in3,int radius, int Threshold){
 #if USEMASK
-  imgMask.create(in.rows, in.cols, CV_8UC3);
+  imgMask.create(in1.rows, in1.cols, CV_8UC3);
   imgMask.setTo(0);
-  cv::circle(imgMask, Point(in.cols/2 - 30, in.rows/2 + 30), 710, CV_RGB(255,255,255), -1);
-  masks.push_back(imgMask);
+  cv::circle(imgMask, Point(in1.cols/2 - 30, in1.rows/2 + 30), 710, CV_RGB(255,255,255), -1);
+  imgMask.copyTo(masks[0]);
   imgMask.setTo(0);
-  cv::circle(imgMask, Point(in.cols/2 + 20, in.rows/2 + 62), 710, CV_RGB(255,255,255), -1);
-  masks.push_back(imgMask);
+  cv::circle(imgMask, Point(in1.cols/2 + 15, in1.rows/2 + 64), 710, CV_RGB(255,255,255), -1);
+  imgMask.copyTo(masks[1]);
   imgMask.setTo(0);
-  cv::circle(imgMask, Point(in.cols/2 + 5, in.rows/2 - 50), 710, CV_RGB(255,255,255), -1);
-  masks.push_back(imgMask);
-  bitwise_and(in, masks[MaskIdx], in);
+  cv::circle(imgMask, Point(in1.cols/2 - 30, in1.rows/2 + 35), 710, CV_RGB(255,255,255), -1);
+  imgMask.copyTo(masks[2]);
+  bitwise_and(in1, masks[0], in1);
+  bitwise_and(in2, masks[1], in2);
+  bitwise_and(in3, masks[2], in3);
+//  imshow("mask1", masks[0]);
+//  imshow("mask2", masks[1]);
+//  imshow("mask3", masks[2]);
 #endif
 
-  Mat gray;
-  cvtColor(in, gray, COLOR_RGB2GRAY);
+//  Mat gray;
+//  cvtColor(in, gray, COLOR_RGB2GRAY);
 
-  Mat thresh;
-  threshold(gray, thresh,Threshold,255,THRESH_BINARY);
+//  Mat thresh;
+//  threshold(gray, thresh,Threshold,255,THRESH_BINARY);
 
-  vector<vector<Point>> contours;
-  findContours(thresh, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+//  vector<vector<Point>> contours;
+//  findContours(thresh, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
-  // find the largest area of contour
-  int maxArea = -1;
-  vector<Point> MaxContour;
-  for(int i = 0; i < contours.size(); i++){
-      int area = contourArea(contours[i]);
-      if(area > maxArea){
-          MaxContour = contours[i];
-          maxArea = area;
-        }
-    }
+//  // find the largest area of contour
+//  int maxArea = -1;
+//  vector<Point> MaxContour;
+//  for(int i = 0; i < contours.size(); i++){
+//      int area = contourArea(contours[i]);
+//      if(area > maxArea){
+//          MaxContour = contours[i];
+//          maxArea = area;
+//        }
+//    }
 
-  rc = boundingRect(MaxContour);
+//  rc = boundingRect(MaxContour);
+
+  // calc rect info
+  this->CalcRcCutFunc(in1, 0);
+  this->CalcRcCutFunc(in2, 1);
+  this->CalcRcCutFunc(in3, 2);
+//  rcs[0] = Rect(in1.cols/2 - 30 - 710, in1.rows/2 + 30 - 710, 1420, 1420);
+//  rcs[1] = Rect(in1.cols/2 + 15 - 710, in1.rows/2 + 64 - 710, 1420, 1420);
+//  rcs[2] = Rect(in1.cols/2 - 30 - 710, in1.rows/2 + 35 - 710, 1420, 1420);
+
   r = radius;
 
   int R = 2*r;
-  cutted = Mat::zeros(Size(rc.width,rc.height), CV_8UC3);
 
   //  double pi = 3.141592653589793;
   double pi = CV_PI;
 
+
+  cutted = Mat::zeros(Size(rcs[0].width,rcs[0].height), CV_8UC3);
   int src_h, src_w;
   src_h = cutted.rows;
   src_w = cutted.cols;
@@ -518,23 +543,22 @@ void Undistort::InitMartix(Mat& in,int radius, int MaskIdx, int Threshold){
     }
   flag = (Eigen::MatrixXd::Ones(R,1) * flag.matrix()).array();
 
-#if NEAREST
-  u = x0 + temp_u * flag + 0.5;
-  cout << "u: " << u.rows() << " " << u.cols() << endl;
-  v = y0 + temp_v * flag.transpose() + 0.5;
-  cout << "v: " << v.rows() << " " << v.cols() << endl;
-  u.cast<int>();
-  v.cast<int>();
-#endif
+//#if NEAREST
+//  u = x0 + temp_u * flag + 0.5;
+//  cout << "u: " << u.rows() << " " << u.cols() << endl;
+//  v = y0 + temp_v * flag.transpose() + 0.5;
+//  cout << "v: " << v.rows() << " " << v.cols() << endl;
+//  u.cast<int>();
+//  v.cast<int>();
+//#endif
 
-#if BILINEAR
-  u = x0 + temp_u * flag;
-  cout << "u: " << u.rows() << " " << u.cols() << endl;
-  v = y0 + temp_v * flag.transpose();
-  cout << "v: " << v.rows() << " " << v.cols() << endl;
-#endif
+//#if BILINEAR
+//  u = x0 + temp_u * flag;
+//  cout << "u: " << u.rows() << " " << u.cols() << endl;
+//  v = y0 + temp_v * flag.transpose();
+//  cout << "v: " << v.rows() << " " << v.cols() << endl;
+//#endif
 
-#if OPENCV__
   u = x0 + temp_u * flag;
   cout << "u: " << u.rows() << " " << u.cols() << endl;
   v = y0 + temp_v * flag.transpose();
@@ -546,25 +570,22 @@ void Undistort::InitMartix(Mat& in,int radius, int MaskIdx, int Threshold){
       for(int j = 0; j < u.cols(); j++){
           xMapArray.at<float>(i,j)=u(i,j);
           yMapArray.at<float>(i,j)=v(i,j);
-        }
-    }
-#endif
+      }
+  }
 
   if(finalrc.width == 0){
       // init final rc
       Mat dst;
-      in(rc).copyTo(cutted);
+      in1(rcs[0]).copyTo(cutted);
       remap(cutted, dst, xMapArray, yMapArray, cv::INTER_LINEAR, cv::BORDER_CONSTANT,
             cv::Scalar(0, 0, 0));
-      CalcRcCutFunc(dst);
-    }
+      CalcRcCutFunc(dst, -1);
+  }
 
   // init unwarpImg
-  unwarpImg.create(Size(2*r,2*r), CV_8UC3);
-  unwarpImg.setTo(0);
   for(int i = 0; i < 3; i++){
-      unwarpImgs.push_back(unwarpImg);
-      cutImgs.push_back(Mat());
+      unwarpImgs[i].create(Size(2*r,2*r), CV_8UC3);
+      unwarpImgs[i].setTo(0);
     }
 
   printf("Undistort parameters all init done!\n");
@@ -660,7 +681,7 @@ void Undistort::MatrixUndistort(Mat &raw, Mat &dst, int idx){
       return;
     }
 
-  raw(rc).copyTo(cutImgs[idx]);
+  raw(rcs[idx]).copyTo(cutImgs[idx]);
 
 #if NEAREST
   for(int i = 0; i < dst.rows; i++){
@@ -678,25 +699,25 @@ void Undistort::MatrixUndistort(Mat &raw, Mat &dst, int idx){
 
 #if BILINEAR
   double s1, s2, s3, s4;
-  for(int i = 0; i < dst.rows; i++){
-      uchar* ptr_out = dst.ptr<uchar>(i);
-      for(int j = 0; j < dst.cols; j++){
-          if(u(i,j) >= 0 && u(i,j) <= cutted.cols-1 && v(i,j) >= 0 && v(i,j) <= cutted.rows-1){
+  for(int i = 0; i < unwarpImgs[idx].rows; i++){
+      uchar* ptr_out = unwarpImgs[idx].ptr<uchar>(i);
+      for(int j = 0; j < unwarpImgs[idx].cols; j++){
+          if(u(i,j) >= 0 && u(i,j) <= cutImgs[idx].cols-1 && v(i,j) >= 0 && v(i,j) <= cutImgs[idx].rows-1){
               int x0 = u(i,j);
               int y0 = v(i,j);
-              int x1 = (u(i,j)+1 <= cutted.cols-1) ? u(i,j)+1 : cutted.cols-1;
-              int y1 = (v(i,j)+1 <= cutted.rows-1) ? v(i,j)+1 : cutted.rows-1;
+              int x1 = (u(i,j)+1 <= cutImgs[idx].cols-1) ? u(i,j)+1 : cutImgs[idx].cols-1;
+              int y1 = (v(i,j)+1 <= cutImgs[idx].rows-1) ? v(i,j)+1 : cutImgs[idx].rows-1;
               s1 = (u(i,j) - x0) * (v(i,j) - y0);
               s2 = (x1 - u(i,j)) * (v(i,j) - y0);
               s3 = (u(i,j) - x0) * (y1 - v(i,j));
               s4 = (x1 - u(i,j)) * (y1 - v(i,j));
 
-              ptr_out[j*3] = cutted.at<Vec3b>(y0, x0)[0]*s4 + cutted.at<Vec3b>(y0, x1)[0]*s3 +
-                  cutted.at<Vec3b>(y1, x0)[0]*s2 + cutted.at<Vec3b>(y1, x1)[0]*s1;
-              ptr_out[j*3+1] = cutted.at<Vec3b>(y0, x0)[1]*s4 + cutted.at<Vec3b>(y0, x1)[1]*s3 +
-                  cutted.at<Vec3b>(y1, x0)[1]*s2 + cutted.at<Vec3b>(y1, x1)[1]*s1;
-              ptr_out[j*3+2] = cutted.at<Vec3b>(y0, x0)[2]*s4 + cutted.at<Vec3b>(y0, x1)[2]*s3 +
-                  cutted.at<Vec3b>(y1, x0)[2]*s2 + cutted.at<Vec3b>(y1, x1)[2]*s1;
+              ptr_out[j*3] = cutImgs[idx].at<Vec3b>(y0, x0)[0]*s4 + cutImgs[idx].at<Vec3b>(y0, x1)[0]*s3 +
+                  cutImgs[idx].at<Vec3b>(y1, x0)[0]*s2 + cutImgs[idx].at<Vec3b>(y1, x1)[0]*s1;
+              ptr_out[j*3+1] = cutImgs[idx].at<Vec3b>(y0, x0)[1]*s4 + cutImgs[idx].at<Vec3b>(y0, x1)[1]*s3 +
+                  cutImgs[idx].at<Vec3b>(y1, x0)[1]*s2 + cutImgs[idx].at<Vec3b>(y1, x1)[1]*s1;
+              ptr_out[j*3+2] = cutImgs[idx].at<Vec3b>(y0, x0)[2]*s4 + cutImgs[idx].at<Vec3b>(y0, x1)[2]*s3 +
+                  cutImgs[idx].at<Vec3b>(y1, x0)[2]*s2 + cutImgs[idx].at<Vec3b>(y1, x1)[2]*s1;
             }
 
         }
@@ -704,8 +725,29 @@ void Undistort::MatrixUndistort(Mat &raw, Mat &dst, int idx){
 #endif
 
 #if OPENCV__
-  remap(cutImgs[idx], unwarpImg, xMapArray, yMapArray, cv::INTER_LINEAR, cv::BORDER_CONSTANT,
+  remap(cutImgs[idx], unwarpImgs[idx], xMapArray, yMapArray, cv::INTER_LINEAR, cv::BORDER_CONSTANT,
         cv::Scalar(0, 0, 0));
 #endif
-  unwarpImg(finalrc).copyTo(dst);
+
+  unwarpImgs[idx](finalrc).copyTo(dst);
+
+#if DEBUGSHOW
+    switch (idx) {
+    case 0:
+        printf("0\n");
+        imshow("0", dst);
+        break;
+    case 1:
+        printf("1\n");
+        imshow("1", dst);
+        break;
+    case 2:
+        printf("2\n");
+        imshow("2", dst);
+        break;
+    default:
+        break;
+    }
+    cv::waitKey();
+#endif
 }

@@ -3,26 +3,30 @@
 
 #include"undistort.h"
 #include<atomic>
-#include<mutex>
-#include<condition_variable>
+#include"threadpool/thread_pool.h"
 
 class FishEyeStitcher
 {
 private:
   Undistort ud;
-  vector<VideoCapture> caps = {VideoCapture("./cam1.mp4"), VideoCapture("./cam2.mp4"), VideoCapture("./cam3.mp4")};
-  vector<Mat> PreparedImgs = {Mat(), Mat(), Mat()};
+  thread_pool pool;
+  VideoCapture caps[3];
+  Mat capImgs[3];
+  Mat PreparedImgs[3];
+  std::vector<std::future<bool>> flgs;
+  atomic_bool isInit;
 
   // multi threads --------------------------
-  atomic_bool startCapture = false;
-  mutex mut1, mut2, mut3;
-  condition_variable data_cond;
+  atomic_bool startCapture;
   // ------------------------
+
+  Mat pano;
 
 public:
   FishEyeStitcher();
+  ~FishEyeStitcher();
   bool Init();
-  bool PreProcess(int idx, Mat& dst);
+  bool PreProcess(int idx);
   bool run();
   bool stop();
   void Stitch();

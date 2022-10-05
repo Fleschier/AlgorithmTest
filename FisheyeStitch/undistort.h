@@ -12,24 +12,25 @@ class Undistort
 private:
   int r;
   Rect rc;
+  Rect rcs[3];
   Rect finalrc = Rect(0,0,0,0);
   Eigen::ArrayXXd u;
   Eigen::ArrayXXd v;
   Mat cutted;
-  vector<Mat> cutImgs;
+  Mat cutImgs[3];
   Mat imgMask;
-  vector<Mat> masks;
+  Mat masks[3];
   Mat xMapArray, yMapArray;
   Mat unwarpImg;
-  vector<Mat> unwarpImgs;
+  Mat unwarpImgs[3];
 
-  void CalcRcCutFunc(Mat& in);
+  void CalcRcCutFunc(Mat& in, int idx);
 public:
   Undistort();
   void cutFisheye(Mat& in, Mat& out);
   void unDisFishEyeTest(Mat& in, Mat& out);
   void InitMartix(Mat& in, int Threshold = 20);
-  void InitMartix(Mat& in,int radius, int MaskIdx = 0,  int Threshold = 20);
+  void InitMartix(Mat& in1,Mat& in2,Mat& in3,int radius = 1600/2, int Threshold = 20);
   void MatrixUndistort(Mat& raw, Mat& dst);
   void MatrixUndistort(Mat& raw, Mat& dst, int idx);
 };
