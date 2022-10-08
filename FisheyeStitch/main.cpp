@@ -4,7 +4,7 @@
 
 void Show(){
   Mat img;
-  VideoCapture cap("./cam2.mp4");
+  VideoCapture cap("/home/fleschier/Programs/CPP/Videos/test12.mp4");
   if(!cap.isOpened()){
       printf("failed to open camera!\n");
       return;
@@ -14,17 +14,19 @@ void Show(){
   cap.set(CAP_PROP_FOURCC, VideoWriter::fourcc('M','J','P','G'));
 //  cap.set(CAP_PROP_FPS, 30);
   Undistort ud;
-  for(int i = 0; i < 10; i++){
+  for(int i = 0; i < 44; i++){
       cap.read(img);
 //      imshow("test", img);
 //      waitKey();
     }
-  imwrite("test.jpg", img);
-  ud.InitMartix(img);
+//  imwrite("test.jpg", img);
+  ud.InitMartix(img, 1);
   Mat dst;
   while(cap.read(img)){
       ud.MatrixUndistort(img, dst);
       imshow("result", dst);
+      imwrite("/home/fleschier/Programs/CPP/Pictures/test12.jpg", dst);
+      break;
       char c = waitKey(1);
       if(c == 27){
           break;
@@ -100,8 +102,8 @@ void stitcherTest(){
 
 int main(int argc, char *argv[])
 {
-    //  Show();
-    //  test();
+      Show();
+//      test();
     //  cutUnwarpedTest();
-    stitcherTest();
+//    stitcherTest();
 }

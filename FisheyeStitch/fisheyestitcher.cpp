@@ -4,7 +4,7 @@ using namespace chrono;
 
 #define DEBUGSHOW 0
 #define RUNTIME 0
-#define STORERESULT 1
+#define STORERESULT 0
 
 FishEyeStitcher::FishEyeStitcher(){
     isInit = Init();

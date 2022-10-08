@@ -285,8 +285,8 @@ void Undistort::InitMartix(Mat& in, int Threshold){
 #if USEMASK
   imgMask.create(in.rows, in.cols, CV_8UC3);
   imgMask.setTo(0);
-//  cv::circle(imgMask, Point(in.cols/2 - 30, in.rows/2 + 30), 710, CV_RGB(255,255,255), -1);
-  cv::circle(imgMask, Point(in.cols/2 + 15, in.rows/2 + 64), 710, CV_RGB(255,255,255), -1);
+  cv::circle(imgMask, Point(in.cols/2 - 30, in.rows/2 + 30), 710, CV_RGB(255,255,255), -1);
+//  cv::circle(imgMask, Point(in.cols/2 + 15, in.rows/2 + 64), 710, CV_RGB(255,255,255), -1);
 //  cv::circle(imgMask, Point(in.cols/2 + 5, in.rows/2 - 50), 710, CV_RGB(255,255,255), -1);
   bitwise_and(in, imgMask, in);
 #endif
