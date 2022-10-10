@@ -8,7 +8,7 @@ using namespace Eigen;
 #define BILINEAR 0
 #define OPENCV__ 1
 #define NEAREST !BILINEAR & !OPENCV__
-#define USEMASK 1
+#define USEMASK 0
 #define DEBUGSHOW 0
 
 
@@ -662,6 +662,7 @@ void Undistort::MatrixUndistort(Mat &raw, Mat &dst){
         cv::Scalar(0, 0, 0));
 #endif
   unwarpImg(finalrc).copyTo(dst);
+//  unwarpImg.copyTo(dst);
 
 }
 

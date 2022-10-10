@@ -4,7 +4,7 @@
 
 void Show(){
   Mat img;
-  VideoCapture cap("/home/fleschier/Programs/CPP/Videos/test12.mp4");
+  VideoCapture cap("./cam1.mp4");
   if(!cap.isOpened()){
       printf("failed to open camera!\n");
       return;
@@ -23,10 +23,15 @@ void Show(){
   ud.InitMartix(img, 1);
   Mat dst;
   while(cap.read(img)){
+
       ud.MatrixUndistort(img, dst);
       imshow("result", dst);
-      imwrite("/home/fleschier/Programs/CPP/Pictures/test12.jpg", dst);
-      break;
+      {
+        imwrite("./cam1.jpg", dst);
+        imwrite("testimg.jpg", img);
+        break;
+      }
+
       char c = waitKey(1);
       if(c == 27){
           break;
