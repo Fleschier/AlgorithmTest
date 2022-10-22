@@ -8,19 +8,19 @@
 class FishEyeStitcher
 {
 private:
-  Undistort ud;
-  thread_pool pool;
-  VideoCapture caps[3];
-  Mat capImgs[3];
-  Mat PreparedImgs[3];
-  std::vector<std::future<bool>> flgs;
-  atomic_bool isInit;
+  Undistort _ud;
+  thread_pool _pool;
+  VideoCapture _caps[3];
+  Mat _capImgs[3];
+  Mat _PreparedImgs[3];
+  std::vector<std::future<bool>> _flgs;
+  atomic_bool _isInit;
 
   // multi threads --------------------------
-  atomic_bool startCapture;
+  atomic_bool _startCapture;
   // ------------------------
 
-  Mat pano;
+  Mat _pano;
 
 public:
   FishEyeStitcher();

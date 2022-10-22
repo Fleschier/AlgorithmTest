@@ -1,10 +1,11 @@
 #include <QCoreApplication>
 
 #include"fisheyestitcher.h"
+#include"test/ImageStitch.h"
 
 void Show(){
   Mat img;
-  VideoCapture cap("./cam1.mp4");
+  VideoCapture cap("./cam3.mp4");
   if(!cap.isOpened()){
       printf("failed to open camera!\n");
       return;
@@ -20,14 +21,14 @@ void Show(){
 //      waitKey();
     }
 //  imwrite("test.jpg", img);
-  ud.InitMartix(img, 1);
+  ud.InitMartix(img,img,img);
   Mat dst;
   while(cap.read(img)){
 
-      ud.MatrixUndistort(img, dst);
+      ud.MatrixUndistort(img, dst,0);
       imshow("result", dst);
       {
-        imwrite("./cam1.jpg", dst);
+        imwrite("./cam3.jpg", dst);
         imwrite("testimg.jpg", img);
         break;
       }
@@ -41,7 +42,7 @@ void Show(){
 
 void test(){
   Undistort ud;
-  Mat img = imread("/home/fleschier/Programs/CPP/fisheye/test_2592x1944.jpg");
+  Mat img = imread("./fullcam3.jpg");
   if(img.empty()){
       printf("read img failed!\n");
     }
@@ -105,10 +106,38 @@ void stitcherTest(){
     stitcher.stop();
 }
 
+void record(){
+  Mat img;
+  VideoCapture cap(0);
+  VideoWriter writer;
+  writer.open("cam1.mp4", VideoWriter::fourcc('X','2','6','4'), 30, Size(1920,1080));
+
+  if(!cap.isOpened() || !writer.isOpened()){
+      printf("failed to open camera!\n");
+      return;
+    }
+  cap.set(CAP_PROP_FRAME_WIDTH, 1920);
+  cap.set(CAP_PROP_FRAME_HEIGHT, 1080);
+  cap.set(CAP_PROP_FOURCC, VideoWriter::fourcc('M','J','P','G'));
+  cap.set(CAP_PROP_FPS, 30);
+
+  while(cap.read(img)){
+//      writer.write(img);
+      imshow("test", img);
+
+      char c = waitKey(1);
+      if(c == 27){
+          break;
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
-      Show();
+//      Show();
 //      test();
     //  cutUnwarpedTest();
-//    stitcherTest();
+    stitcherTest();
+//  fullStitchTest();
+//  record();
 }
