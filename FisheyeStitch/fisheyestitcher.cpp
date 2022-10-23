@@ -29,6 +29,10 @@ bool FishEyeStitcher::Init(){
       printf("failed to read img!\n");
       return false;
     }
+  for(int i = 0; i < 3; i++){
+      _ovlps[i] = 300;
+    }
+  _cut_border = 20;
   return _ud.InitMartix(img1, img2, img3, 1600/2, 5, MIDPOINTCIRCLE);
 }
 
@@ -117,7 +121,7 @@ void FishEyeStitcher::Stitch(){
 #endif
 
         if(_pano.empty()){
-            int width = _PreparedImgs[0].cols + _PreparedImgs[1].cols + _PreparedImgs[2].cols;
+            int width = _PreparedImgs[0].cols + _PreparedImgs[1].cols + _PreparedImgs[2].cols - _ovlps[0] - _ovlps[1] - _ovlps[2];
             int height = MAX(MAX(_PreparedImgs[0].rows, _PreparedImgs[1].rows), _PreparedImgs[2].rows);
 
             printf("pano.cols: %d, target width: %d, reallocate...\n",_pano.cols, width);
@@ -128,10 +132,14 @@ void FishEyeStitcher::Stitch(){
         Size size1 = _PreparedImgs[1].size();
         Size size2 = _PreparedImgs[0].size();
         Size size3 = _PreparedImgs[2].size();
-        _PreparedImgs[1](Rect(size1.width/2, 0,size1.width/2, size1.height)).copyTo(_pano(Rect(0,0, size1.width/2, size1.height)));
-        _PreparedImgs[0].copyTo(_pano(Rect(size1.width/2,0, size2.width, size2.height)));
-        _PreparedImgs[2].copyTo(_pano(Rect(size1.width/2+size2.width,0,size3.width, size3.height)));
-        _PreparedImgs[1](Rect(0,0,size1.width/2,size1.height)).copyTo(_pano(Rect(size1.width/2+size2.width+size3.width,0,size1.width/2,size1.height)));
+        _PreparedImgs[1](Rect(size1.width/2, 0,size1.width/2-_cut_border, size1.height))
+            .copyTo(_pano(Rect(0,0, size1.width/2-_cut_border, size1.height)));
+        _PreparedImgs[0](Rect(_ovlps[0],0,size2.width-_ovlps[0]-_cut_border,size2.height))
+            .copyTo(_pano(Rect(size1.width/2-_cut_border,0, size2.width-_ovlps[0]-_cut_border, size2.height)));
+        _PreparedImgs[2](Rect(_ovlps[1],0,size3.width-_ovlps[1]-_cut_border,size3.height))
+            .copyTo(_pano(Rect(size1.width/2+size2.width-_ovlps[0]-2*_cut_border,0,size3.width-_ovlps[1]-_cut_border, size3.height)));
+        _PreparedImgs[1](Rect(_ovlps[2],0,size1.width/2-_ovlps[2],size1.height))
+            .copyTo(_pano(Rect(size1.width/2+size2.width-_ovlps[0]+size3.width-_ovlps[1]-3*_cut_border,0,size1.width/2-_ovlps[2],size1.height)));
 
 #if STORERESULT
         static int count = 0;

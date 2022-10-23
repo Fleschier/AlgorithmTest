@@ -22,6 +22,9 @@ private:
 
   Mat _pano;
 
+  uint _ovlps[3];
+  int _cut_border;
+
 public:
   FishEyeStitcher();
   ~FishEyeStitcher();
