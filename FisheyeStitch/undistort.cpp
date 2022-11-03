@@ -63,7 +63,7 @@ Point PointMean( const vector<Point> &aPoints )
 
 
 Undistort::Undistort(){
-
+  _cut_border = 20;
 }
 
 void Undistort::cutFisheye(Mat &in, Mat &out){
@@ -825,8 +825,16 @@ bool Undistort::InitMartix(Mat& in1,Mat& in2,Mat& in3,int radius, int Threshold,
       if(DOUBLELONGGITUDE == _method){
           _unwarpImgs[i].create(Size(2*r,2*r), CV_8UC3);
         }
-      else if(HEMICYLINDER == _method || MIDPOINTCIRCLE == _method){
+      else if(HEMICYLINDER == _method){
           _unwarpImgs[i].create(Size(_cutted.cols, _cutted.rows), CV_8UC3);
+        }
+      else if(MIDPOINTCIRCLE == _method){
+          _unwarpImgs[i].create(Size(_cutted.cols, _cutted.rows), CV_8UC3);
+//          if(_cpy_mask.cols == 0){
+//              _cpy_mask.create(Size(_cutted.cols, _cutted.rows), CV_8UC1);
+//              _cpy_mask.setTo(0);
+//              _cpy_mask(Rect(_cut_border,0,_cpy_mask.cols-2*_cut_border,_cpy_mask.rows)).setTo(255);
+//            }
         }
       else{
           printf("Unsupported undistort method:%d\n", (int)_method);
@@ -878,25 +886,25 @@ bool Undistort::MatrixUndistort(Mat &raw, Mat &dst, int idx){
   bitwise_and(raw, _masks[idx], raw);
 #endif
 
-  if(DOUBLELONGGITUDE == _method){
-      printf("test\n");
-      if(_finalrc.width != 0){
-          if(dst.cols != _finalrc.width || dst.rows != _finalrc.height){
-              dst.create(Size(_finalrc.width, _finalrc.height), CV_8UC3);
-              dst.setTo(0);
-            }
-        }
-      else{
-          printf("uninitialize final rc, please check!\n");
-          return false;
-        }
-    }
-  else{
-      if(dst.cols != _cutted.cols){
-          dst.create(_cutted.size(), CV_8U);
-          printf("resize dst\n");
-        }
-    }
+//  if(DOUBLELONGGITUDE == _method){
+//      printf("test\n");
+//      if(_finalrc.width != 0){
+//          if(dst.cols != _finalrc.width || dst.rows != _finalrc.height){
+//              dst.create(Size(_finalrc.width, _finalrc.height), CV_8UC3);
+//              dst.setTo(0);
+//            }
+//        }
+//      else{
+//          printf("uninitialize final rc, please check!\n");
+//          return false;
+//        }
+//    }
+//  else{
+//      if(dst.cols != _cutted.cols){
+//          dst.create(_cutted.size(), CV_8U);
+//          printf("resize dst\n");
+//        }
+//    }
 
 
   raw(_rcs[idx]).copyTo(_cutImgs[idx]);
@@ -907,8 +915,16 @@ bool Undistort::MatrixUndistort(Mat &raw, Mat &dst, int idx){
   if(DOUBLELONGGITUDE == _method){
       _unwarpImgs[idx](_finalrc).copyTo(dst);
     }
-  else{
+  else if(MIDPOINTCIRCLE == _method){
+      _unwarpImgs[idx](Rect(_cut_border,0,_unwarpImgs[idx].cols-2*_cut_border, _unwarpImgs[idx].rows)).copyTo(dst);
+//      _unwarpImgs[idx].copyTo(dst, _cpy_mask);
+    }
+  else if(HEMICYLINDER == _method){
       _unwarpImgs[idx].copyTo(dst);
+    }
+  else{
+      printf("undefined undistort method!\n");
+      return false;
     }
 
 

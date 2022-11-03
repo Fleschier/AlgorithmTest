@@ -124,6 +124,7 @@ int main( int argc, char *argv[] )
 
 #ifdef _DEBUG
 	// show input frame
+	namedWindow("Input Frame", WINDOW_NORMAL);
 	imshow( "Input Frame", inputFrame );
 #endif
 
@@ -189,11 +190,19 @@ int main( int argc, char *argv[] )
 	}
 	else if( MIDPOINTCIRCLE == eMethod )
 	{
+
+	    Cx = nWidth / 2;
+	    Cy = nHeight / 2;
+//	    int R = (nWidth / 2)*1.1;
+	    int R = 1020;
+
+	    Mat tempFrame = inputFrame.clone();
+	    // if manual
+	    if(0){
 		cout << "\nPlease mark 12 points on the boundary of the circle\n\n";
 
 		// show input frame for marking circle
-		Mat tempFrame = inputFrame.clone();
-		imshow( "Input Frame", tempFrame );
+		imshow( "Input Frame", tempFrame);
 
 		// initialize point list
 		g_cClicks = 0;
@@ -281,56 +290,64 @@ int main( int argc, char *argv[] )
 		// compute parameters
 		Cx = (int)A + mean.x;
 		Cy = (int)B + mean.y;
-		int R = (int)sqrt (C + A * A + B * B);
-
+		R = (int)sqrt (C + A * A + B * B);
 #ifdef _DEBUG
-		cout << "Cx = " << Cx << ", Cy = " << Cy << ", R = " << R << endl;
+		for(auto& point: aPoints){
+		    cout << "point coordinate:" << point << endl;
+		  }
+
+		imwrite("calib_img.jpg", tempFrame);
 #endif
 
-		// draw computed circle
-		circle( tempFrame, Point( Cx, Cy ), R, CV_RGB( 0, 255, 0 ) );
-		imshow( "Input Frame", tempFrame );
-		cv::waitKey();
+	      }
 
-		// generate transformation map
-		for( int u = 0; u < nWidth; u++ )
-		{
-			for( int v = 0; v < nHeight; v++ )
-			{
-				float x1, y1;
-				float xt = float(u - Cx);
-				float yt = float(v - Cy);
-				if( xt != 0 ) // non limiting case
-				{
-					float AO1 = (xt * xt + float(R * R)) / (2.0f * xt);
-					float AB = sqrt( xt * xt + float(R * R) );
-					float AP = yt;
-					float PE = float(R - yt);
+#ifdef _DEBUG
+	    cout << "Cx = " << Cx << ", Cy = " << Cy << ", R = " << R << endl;
+	    // draw computed circle
+	    circle( tempFrame, Point( Cx, Cy ), R, CV_RGB( 0, 255, 0 ) );
+	    imshow( "Input Frame", tempFrame );
+	    cv::waitKey();
+#endif
 
-					float a = AP / PE;
-					float b = 2.0f * asin( AB / (2.0f * AO1) );
+	    // generate transformation map
+	    for( int u = 0; u < nWidth; u++ )
+	      {
+		for( int v = 0; v < nHeight; v++ )
+		  {
+		    float x1, y1;
+		    float xt = float(u - Cx);
+		    float yt = float(v - Cy);
+		    if( xt != 0 ) // non limiting case
+		      {
+			float AO1 = (xt * xt + float(R * R)) / (2.0f * xt);
+			float AB = sqrt( xt * xt + float(R * R) );
+			float AP = yt;
+			float PE = float(R - yt);
 
-					float alpha = a * b / (a + 1.0f);
-					x1 = xt - AO1 + AO1 * cos( alpha );
-					y1 = AO1 * sin( alpha );
-				}
-				else // limiting case
-				{
-					x1 = (float)xt;
-					y1 = (float)yt;
-				}
-				transformMapX.at<float>( v, u ) = x1 + (float)Cx;
-				transformMapY.at<float>( v, u ) = y1 + (float)Cy;
-			}
-		}
-	}
+			float a = AP / PE;
+			float b = 2.0f * asin( AB / (2.0f * AO1) );
+
+			float alpha = a * b / (a + 1.0f);
+			x1 = xt - AO1 + AO1 * cos( alpha );
+			y1 = AO1 * sin( alpha );
+		      }
+		    else // limiting case
+		      {
+			x1 = (float)xt;
+			y1 = (float)yt;
+		      }
+		    transformMapX.at<float>( v, u ) = x1 + (float)Cx;
+		    transformMapY.at<float>( v, u ) = y1 + (float)Cy;
+		  }
+	      }
+	  }
 	else
-	{
-		cout << "Error in loading input file\n";
-		PrintHelp();
-		// return with error
-		return -1;
-	}
+	  {
+	    cout << "Error in loading input file\n";
+	    PrintHelp();
+	    // return with error
+	    return -1;
+	  }
 
 #ifdef _DEBUG
 	imwrite( "MapX.bmp", transformMapX );
@@ -342,50 +359,103 @@ int main( int argc, char *argv[] )
 	remap( inputFrame, tempFrame, transformMapX, transformMapY, CV_INTER_CUBIC, BORDER_CONSTANT );
 
 	if( MIDPOINTCIRCLE == eMethod )
-	{
-		// rescale y transform
-		for( int u = 0; u < nWidth; u++ )
-		{
-			float min_y1 = (float)nHeight;
-			float max_y1 = 0.0;
-			for( int v = 0; v < nHeight; v++ )
-			{
-				float y1 = transformMapY.at<float>( v, u );
-				// compute maximum y1
-				if (y1 < min_y1)
-				{
-					min_y1 = y1;
-				}
-				// compute minimum y1
-				if (y1 > max_y1)
-				{
-					max_y1 = y1;
-				}
-			}
+	  {
+	    // rescale y transform
+	    for( int u = 0; u < nWidth; u++ )
+	      {
+		float min_y1 = (float)nHeight;
+		float max_y1 = 0.0;
+		for( int v = 0; v < nHeight; v++ )
+		  {
+		    float y1 = transformMapY.at<float>( v, u );
+		    // compute maximum y1
+		    if (y1 < min_y1)
+		      {
+			min_y1 = y1;
+		      }
+		    // compute minimum y1
+		    if (y1 > max_y1)
+		      {
+			max_y1 = y1;
+		      }
+		  }
 
-			// compute range of y1
-			float range = max_y1 - min_y1;
+		// compute range of y1
+		float range = max_y1 - min_y1;
 
-			// compress range to H
-			float factor = range / (float)nHeight;
-			//cout << u << " " << factor << ", ";
-			factor = ( factor > 1.0f )?pow( factor, 1.0f ):factor;
-			for( int v = 0; v < nHeight; v++ )
-			{
-				transformMapX.at<float>( v, u ) = (float)u;
-				transformMapY.at<float>( v, u ) = float( v - Cy ) / factor + float(Cy);
-			}
-		}
+		// compress range to H
+		float factor = range / (float)nHeight;
+		//cout << u << " " << factor << ", ";
+		factor = ( factor > 1.0f )?pow( factor, 1.0f ):factor;
+		for( int v = 0; v < nHeight; v++ )
+		  {
+		    transformMapX.at<float>( v, u ) = (float)u;
+		    transformMapY.at<float>( v, u ) = float( v - Cy ) / factor + float(Cy);
+		  }
+	      }
 
-		// save output file
-		imwrite( "temp.jpg", tempFrame );
+//	    // rescale x transform
+//	    for( int v = 0; v < nHeight; v++ )
+//	      {
+//		float min_x1 = (float)nWidth;
+//		float max_x1 = 0.0;
+//		for( int u = 0; u < nWidth; u++ )
+//		  {
+//		    float x1 = transformMapX.at<float>( v, u );
+//		    // compute maximum y1
+//		    if (x1 < min_x1)
+//		      {
+//			min_x1 = x1;
+//		      }
+//		    // compute minimum y1
+//		    if (x1 > max_x1)
+//		      {
+//			max_x1 = x1;
+//		      }
+//		  }
 
-		remap( tempFrame, outputFrame, transformMapX, transformMapY, CV_INTER_CUBIC, BORDER_CONSTANT );
-	}
+//		// compute range of y1
+//		float range = max_x1 - min_x1;
+
+//		// compress range to H
+//		float factor = range / (float)nWidth;
+//		//cout << u << " " << factor << ", ";
+//		factor = ( factor > 1.0f )?pow( factor, 1.0f ):factor;
+//		for( int u = 0; u < nWidth; u++ )
+//		  {
+//		    transformMapX.at<float>( v, u ) = (float)(u - Cx) / factor + float(Cx);
+//		    transformMapY.at<float>( v, u ) = float(v);
+//		  }
+//	      }
+
+//	    // remove black area
+//	    int R = 1030;
+//	    for( int v = 0; v < nHeight; v++ ){
+//		for( int u = 0; u < nWidth; u++ ){
+//		    float x1 = transformMapX.at<float>( v, u );
+//		    float y1 = transformMapY.at<float>( v, u );
+
+//		    float l = sqrt(pow(x1-Cx, 2) + pow(y1-Cy, 2));	//  (lu, theta) <==> (v,u)
+//		    if(l > (float)R){    // point out of valid fisheye area
+//			float theta;
+//			theta = acos((float)(x1-Cx)/l);
+//			transformMapX.at<float>( v, u ) = cos(theta) * R + Cx;
+//			transformMapY.at<float>( v, u ) = sin(theta) * R + Cy;
+//		      }
+//		  }
+
+//	      }
+
+
+	    // save output file
+	    imwrite( "temp.jpg", tempFrame );
+
+	    remap( tempFrame, outputFrame, transformMapX, transformMapY, CV_INTER_LINEAR, BORDER_CONSTANT );
+	  }
 	else
-	{
-		outputFrame = tempFrame;
-	}
+	  {
+	    outputFrame = tempFrame;
+	  }
 
 	// save output file
 	imwrite( strOutputFile, outputFrame );

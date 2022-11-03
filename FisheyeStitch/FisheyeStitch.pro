@@ -37,7 +37,8 @@ HEADERS += \
     threadpool/join_threads.h \
     threadpool/thread_pool.h \
     threadpool/threadsafe_queue.h \
-    test/ImageStitch.h
+    test/ImageStitch.h \
+    test/multibandblendertest.hpp
 
 INCLUDEPATH += /usr/local/include/opencv4/ \
             += /usr/local/include/opencv4/opencv2/ \

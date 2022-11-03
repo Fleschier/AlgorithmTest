@@ -1,5 +1,6 @@
 #include "fisheyestitcher.h"
 #include<chrono>
+#include "test/multibandblendertest.hpp"
 using namespace chrono;
 
 #define DEBUGSHOW 0
@@ -18,6 +19,9 @@ bool FishEyeStitcher::Init(){
   _caps[0].open("./cam1.mp4");
   _caps[1].open("./cam2.mp4");
   _caps[2].open("./cam3.mp4");
+//  _caps[0].open("/home/cyx/programes/Videos/stitch_video/test1.mp4");
+//  _caps[1].open("/home/cyx/programes/Videos/stitch_video/test2.mp4");
+//  _caps[2].open("/home/cyx/programes/Videos/stitch_video/test3.mp4");
   Mat img1, img2, img3;
   for(int i = 0; i < 3; i++){
       if(!_caps[i].isOpened()){
@@ -29,10 +33,15 @@ bool FishEyeStitcher::Init(){
       printf("failed to read img!\n");
       return false;
     }
+
+//  _caps[0].set(CAP_PROP_POS_AVI_RATIO, 1);
+//  _caps[1].set(CAP_PROP_POS_AVI_RATIO, 1);
+//  _caps[2].set(CAP_PROP_POS_AVI_RATIO, 1);
+
   for(int i = 0; i < 3; i++){
       _ovlps[i] = 300;
     }
-  _cut_border = 20;
+//  _cut_border = 0;
   return _ud.InitMartix(img1, img2, img3, 1600/2, 5, MIDPOINTCIRCLE);
 }
 
@@ -104,10 +113,10 @@ void FishEyeStitcher::Stitch(){
 #endif
 
         for(int i = 0;  i < 3; i++){
-            auto flg = _pool.submit(std::bind(&FishEyeStitcher::PreProcess, this, i));
+            std::future<bool> flg = _pool.submit(std::bind(&FishEyeStitcher::PreProcess, this, i));
             _flgs.emplace_back(std::move(flg));
         }
-        for(auto & flg: _flgs){    //future对象不能复制，所以auto 后面要加& 来表示取引用
+        for(std::future<bool> & flg: _flgs){    //future对象不能复制，所以auto 后面要加& 来表示取引用
             if(flg.wait_for(std::chrono::seconds(1)) == std::future_status::timeout){
                 cout << "执行挂起的任务\n";
                 _pool.run_pending_task();    // 执行挂起的任务
@@ -132,14 +141,29 @@ void FishEyeStitcher::Stitch(){
         Size size1 = _PreparedImgs[1].size();
         Size size2 = _PreparedImgs[0].size();
         Size size3 = _PreparedImgs[2].size();
-        _PreparedImgs[1](Rect(size1.width/2, 0,size1.width/2-_cut_border, size1.height))
-            .copyTo(_pano(Rect(0,0, size1.width/2-_cut_border, size1.height)));
-        _PreparedImgs[0](Rect(_ovlps[0],0,size2.width-_ovlps[0]-_cut_border,size2.height))
-            .copyTo(_pano(Rect(size1.width/2-_cut_border,0, size2.width-_ovlps[0]-_cut_border, size2.height)));
-        _PreparedImgs[2](Rect(_ovlps[1],0,size3.width-_ovlps[1]-_cut_border,size3.height))
-            .copyTo(_pano(Rect(size1.width/2+size2.width-_ovlps[0]-2*_cut_border,0,size3.width-_ovlps[1]-_cut_border, size3.height)));
+//        _PreparedImgs[1](Rect(size1.width/2, 0,size1.width/2-_cut_border, size1.height))
+//            .copyTo(_pano(Rect(0,0, size1.width/2-_cut_border, size1.height)));
+//        _PreparedImgs[0](Rect(_ovlps[0],0,size2.width-_ovlps[0]-_cut_border,size2.height))
+//            .copyTo(_pano(Rect(size1.width/2-_cut_border,0, size2.width-_ovlps[0]-_cut_border, size2.height)));
+//        _PreparedImgs[2](Rect(_ovlps[1],0,size3.width-_ovlps[1]-_cut_border,size3.height))
+//            .copyTo(_pano(Rect(size1.width/2+size2.width-_ovlps[0]-2*_cut_border,0,size3.width-_ovlps[1]-_cut_border, size3.height)));
+//        _PreparedImgs[1](Rect(_ovlps[2],0,size1.width/2-_ovlps[2],size1.height))
+//            .copyTo(_pano(Rect(size1.width/2+size2.width-_ovlps[0]+size3.width-_ovlps[1]-3*_cut_border,0,size1.width/2-_ovlps[2],size1.height)));
+
+        _PreparedImgs[1](Rect(size1.width/2, 0,size1.width/2, size1.height))
+            .copyTo(_pano(Rect(0,0, size1.width/2, size1.height)));
+        _PreparedImgs[0](Rect(_ovlps[0],0,size2.width-_ovlps[0],size2.height))
+            .copyTo(_pano(Rect(size1.width/2,0, size2.width-_ovlps[0], size2.height)));
+        _PreparedImgs[2](Rect(_ovlps[1],0,size3.width-_ovlps[1],size3.height))
+            .copyTo(_pano(Rect(size1.width/2+size2.width-_ovlps[0],0,size3.width-_ovlps[1], size3.height)));
         _PreparedImgs[1](Rect(_ovlps[2],0,size1.width/2-_ovlps[2],size1.height))
-            .copyTo(_pano(Rect(size1.width/2+size2.width-_ovlps[0]+size3.width-_ovlps[1]-3*_cut_border,0,size1.width/2-_ovlps[2],size1.height)));
+            .copyTo(_pano(Rect(size1.width/2+size2.width-_ovlps[0]+size3.width-_ovlps[1],0,size1.width/2-_ovlps[2],size1.height)));
+
+//        blendTest(_PreparedImgs[0], Rect(size2.width - _ovlps[1], 0, _ovlps[1], size2.height),
+//            _PreparedImgs[2], Rect(0,0,_ovlps[1], size3.height), _pano,
+//            Rect(size1.width/2+size2.width-_ovlps[0]-_ovlps[1], 0, _ovlps[1], _pano.rows));
+        MultiBlend(_PreparedImgs[0](Rect(size2.width - _ovlps[1], 0, _ovlps[1], size2.height)),
+            _PreparedImgs[2](Rect(0,0,_ovlps[1], size3.height)));
 
 #if STORERESULT
         static int count = 0;
@@ -161,6 +185,12 @@ void FishEyeStitcher::Stitch(){
 #endif
         imshow("pano", _pano);
         cv::waitKey(27);
+
+//        imwrite("test_dst.jpg", _pano);
+//        imwrite("prepare0.jpg", _PreparedImgs[0]);
+//        imwrite("prepare1.jpg", _PreparedImgs[1]);
+//        imwrite("prepare2.jpg", _PreparedImgs[2]);
+//        break;
 
         _flgs.clear();
     }

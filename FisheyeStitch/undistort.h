@@ -40,6 +40,9 @@ private:
 
   UndisMethod _method;
 
+  uint _cut_border;
+//  Mat _cpy_mask;
+
   void _CalcRcCutFunc(Mat& in, int idx, int threshold_);
 public:
   Undistort();

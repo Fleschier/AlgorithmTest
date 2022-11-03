@@ -52,9 +52,12 @@ int fullStitchTest()
 //    imgs.push_back(imread("/home/cyx/programes/Pictures/l0001.jpg"));
 //    imgs.push_back(imread("/home/cyx/programes/Pictures/r0001.jpg"));
 
-    imgs.push_back(imread("/home/cyx/programes/C++/fisheye/extract_frames/fullcam1_unwarp.jpg"));
-//    imgs.push_back(imread("/home/cyx/programes/C++/fisheye/extract_frames/fullcam2_unwarp.jpg"));
-    imgs.push_back(imread("/home/cyx/programes/C++/fisheye/extract_frames/fullcam3_unwarp.jpg"));
+//    imgs.push_back(imread("/home/cyx/programes/C++/fisheye/extract_frames/fullcam1_unwarp.jpg"));
+////    imgs.push_back(imread("/home/cyx/programes/C++/fisheye/extract_frames/fullcam2_unwarp.jpg"));
+//    imgs.push_back(imread("/home/cyx/programes/C++/fisheye/extract_frames/fullcam3_unwarp.jpg"));
+
+    imgs.push_back(imread("/home/cyx/programes/Pictures/123.jpg"));
+    imgs.push_back(imread("/home/cyx/programes/Pictures/456.jpg"));
 
     int num_images = imgs.size();    //图像数量
     cout<<"图像数量为"<<num_images<<endl;
@@ -174,9 +177,9 @@ int fullStitchTest()
 
     Ptr<WarperCreator> warper_creator;    //定义图像映射变换创造器
 //    warper_creator = new cv::SphericalWarper();
-//    warper_creator = makePtr<cv::PlaneWarper>();     //平面投影
+    warper_creator = makePtr<cv::PlaneWarper>();     //平面投影
 //    warper_creator = new cv::CylindricalWarper();    //柱面投影
-    warper_creator = new cv::SphericalWarper();    //球面投影
+//    warper_creator = new cv::SphericalWarper();    //球面投影
 //    warper_creator = new cv::FisheyeWarper();    //鱼眼投影
 //    warper_creator = new cv::StereographicWarper();    //立方体投影
 
@@ -313,6 +316,12 @@ int fullStitchTest()
     mb->setNumBands(8);   //设置频段数，即金字塔层数
 
     blender->prepare(corners, sizes);    //生成全景图像区域
+    for(auto& c: corners){
+        cout << c << endl;
+      }
+    for(auto& s: sizes){
+        cout << s << endl;
+      }
     cout<<"生成全景图像区域"<<endl;
     //在融合的时候，最重要的是在接缝线两侧进行处理，而上一步在寻找接缝线后得到的掩码的边界就是接缝线处，因此我们还需要在接缝线两侧开辟一块区域用于融合处理，这一处理过程对羽化方法尤为关键
     //应用膨胀算法缩小掩码面积
