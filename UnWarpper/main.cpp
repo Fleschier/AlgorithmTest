@@ -110,7 +110,10 @@ int main( int argc, char *argv[] )
 	String strOutputFile = argv[2];
 
 	// load input image
-	Mat	inputFrame = imread( strInputFile );
+//	Mat	inputFrame = imread( strInputFile );
+	Mat inputFrame;
+	Mat tempImg = imread(strInputFile);
+	cv::copyMakeBorder(tempImg, inputFrame, 0, 0 ,30 ,30, BORDER_CONSTANT, Scalar(0,0,0));
 	if( !inputFrame.data )
 	{
 		cout << "Error in loading input file\n";
