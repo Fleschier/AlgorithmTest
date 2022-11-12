@@ -5,8 +5,10 @@
 
 from cgi import print_form
 from concurrent.futures import thread
+from readline import write_history_file
 from sys import prefix
 from time import sleep
+from tkinter.tix import X_REGION
 import cv2
 from cv2 import imshow
 from cv2 import WINDOW_NORMAL
@@ -15,8 +17,10 @@ from cv2 import waitKey
 from cv2 import imwrite
 from cv2 import VideoCapture
 from cv2 import INTER_LINEAR
-from torch import Size
+from torch import Size, int16
 import numpy as np
+
+import math
 
 def recordVideo():
     cap = cv2.VideoCapture(0)
@@ -130,8 +134,8 @@ def extractFrame():
     cv2.imwrite(prefix+videoname+".jpg", img)
 
 def cutImg():
-    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/"
-    imgname = "360_0103_right_rotate_midpoint_left"
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/"
+    imgname = "360_0103_right_rotate_left"
     frame = cv2.imread(prefix+imgname+".jpg")
     # left = frame[:, :frame.shape[1] // 2]      # 获取双鱼眼左半部分
     # right = frame[:, frame.shape[1] // 2:]      # 获取双鱼眼右半部分
@@ -246,25 +250,12 @@ def on_EVENT_FixPoint(event, x, y, flags, param):
         # cv2.imshow("image", img)        
 
 def getPoint():
-    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_1/"
-    imgname = "360_0103_left_midpoint"
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/"
+    imgname = "0104_right_calib"
     img1 = cv2.imread(prefix+imgname+".jpg")
 
-        
-    # cvfs = cv2.FileStorage(prefix+"controlPoints_1.yml", cv2.FileStorage_READ)
-
-    # p = cvfs.getNode("p").mat()     # ndarray
-    # q = cvfs.getNode("q").mat()
-    # print(p.shape)
-    # print(p)
-
-    # cvfs.release()
-
-    # p = p.tolist()
-    # q = q.tolist()
-
-    p = []
-    q = []
+    # p = []
+    # q = []
     mPoints = []
 
     cv2.namedWindow("image", WINDOW_NORMAL)
@@ -276,17 +267,17 @@ def getPoint():
         if key == ord('q'):
             break
     cv2.destroyAllWindows()
-    # print(mPoints)
+    print(mPoints)
 
-    cvfs2 = cv2.FileStorage(prefix+"addFixPoints.yml", cv2.FileStorage_WRITE)
-    p = p + mPoints
-    q = q + mPoints
+    # cvfs2 = cv2.FileStorage(prefix+"addFixPoints.yml", cv2.FileStorage_WRITE)
+    # p = p + mPoints
+    # q = q + mPoints
 
-    cvfs2.write("p", np.array(p))
-    cvfs2.write("q", np.array(q))
+    # cvfs2.write("p", np.array(p))
+    # cvfs2.write("q", np.array(q))
 
-    cvfs2.release()
-    cv2.imwrite(prefix+imgname+"_addFix.jpg", img1)
+    # cvfs2.release()
+    # cv2.imwrite(prefix+imgname+"_addFix.jpg", img1)
 
 
 def cutOverlapArea():
@@ -305,9 +296,9 @@ def cutOverlapArea():
     cv2.imwrite(prefix + imgname + "_right.jpg", right)
 
 def markPointFunc():
-    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_1/"
-    imgname1 = "360_0103_left_midpoint_right_down"
-    imgname2 = "360_0103_right_midpoint_left_down"
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/marked_data/"
+    imgname1 = "360_0103_left_right_down_marked_1"
+    imgname2 = "360_0103_right_rotate_left_down_marked_1"
 
     img1 = cv2.imread(prefix+imgname1+".jpg")
     img2 = cv2.imread(prefix+imgname2+".jpg")
@@ -331,7 +322,7 @@ def markPointFunc():
     cv2.imwrite(prefix+imgname1+"_marked.jpg", img1)
     cv2.imwrite(prefix+imgname2+"_marked.jpg", img2)
     
-    cvfs = cv2.FileStorage(prefix+"controlPoints.yml", cv2.FileStorage_WRITE)
+    cvfs = cv2.FileStorage(prefix+"raw_controlPoints.yml", cv2.FileStorage_WRITE)
 
     print(p)
     print(q)
@@ -342,37 +333,55 @@ def markPointFunc():
     cvfs.release()
 
 def getMarkedPoint():
-    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_1/"
-    cvfs = cv2.FileStorage(prefix+"controlPoints.yml", cv2.FileStorage_READ)
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/marked_data/"
+    cvfs = cv2.FileStorage(prefix+"raw_controlPoints.yml", cv2.FileStorage_READ)
 
-    bias = 842      # (y, x)
-    p = cvfs.getNode("p").mat()
-    q = cvfs.getNode("q").mat()
-    for y in q:
-        y[1] = y[1] + bias
+    # bias = 842      # (y, x)
+    # p = cvfs.getNode("p").mat()
+    # q = cvfs.getNode("q").mat()
+    # for y in q:
+    #     y[1] = y[1] + bias
 
+    # print(p)
+    # print(q)
 
+    imgname = "360_0103_left_right_down"
+    imgname2 = "360_0103_right_rotate_left_down"
+    img1 = cv2.imread(prefix+imgname+".jpg")
+    img2 = cv2.imread(prefix+imgname2+".jpg")
+    p = cvfs.getNode("p").mat().tolist()
+    q = cvfs.getNode("q").mat().tolist()
+    p = p[:-2]
+    q = q[:-2]
     print(p)
-    print(q)
+    for i in p:
+        cv2.circle(img1, (i[1], i[0]), 2, (0, 255, 0), -1)
+    for j in q:
+        cv2.circle(img2, (j[1], j[0]), 2, (0, 255, 0), -1)
+    cv2.imwrite(prefix+imgname+"_marked.jpg", img1)
+    cv2.imwrite(prefix+imgname2+"_marked.jpg", img2)
 
     cvfs.release()
-    cvfs2 = cv2.FileStorage(prefix+"controlPoints_translated.yml", cv2.FileStorage_WRITE)
 
-    cvfs2.write("p", p)
-    cvfs2.write("q", q)
+    cvfs2 = cv2.FileStorage(prefix+"raw_controlPoints_part1.yml", cv2.FileStorage_WRITE)
+
+    cvfs2.write("p", np.array(p))
+    cvfs2.write("q", np.array(q))
 
     cvfs2.release()
 
 def testYml():
-    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_1/"
-    imgname = "360_0103_left_midpoint_right_down_marked"
-    cvfs = cv2.FileStorage(prefix+"res.yml", cv2.FileStorage_READ)
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/"
+    imgname = "0103_left_filter"
+    cvfs = cv2.FileStorage(prefix+"equirectangular_left.yml", cv2.FileStorage_READ)
+    # imgname = "0103_right_filter"
+    # cvfs = cv2.FileStorage(prefix+"equirectangular.yml", cv2.FileStorage_READ)
 
     img = cv2.imread(prefix+imgname+".jpg")
-    yarr = cvfs.getNode("yarr").mat().astype(np.float32)
-    xarr = cvfs.getNode("xarr").mat().astype(np.float32)
+    yarr = cvfs.getNode("yMapArr").mat().astype(np.float32)
+    xarr = cvfs.getNode("xMapArr").mat().astype(np.float32)
     img_deform = cv2.remap(img, xarr, yarr, interpolation=INTER_LINEAR)
-    cv2.imwrite(prefix+imgname+"_deform_test.jpg", img_deform)
+    cv2.imwrite(prefix+imgname+"_deform.jpg", img_deform)
 
     cvfs.release()
 
@@ -381,7 +390,7 @@ def rotateImg():
     imgname = "360_0103_right"
     img = cv2.imread(prefix+imgname+".jpg")
     h, w, _ = img.shape
-    Rotate_M = cv2.getRotationMatrix2D((w//2,h//2), -0.85, 1)
+    Rotate_M = cv2.getRotationMatrix2D((w//2,h//2), -0.8, 1)
     img_r = cv2.warpAffine(img, Rotate_M, (w,h))
     cv2.imwrite(prefix+imgname+"_rotate.jpg", img_r)
 
@@ -442,6 +451,281 @@ def DoubleLongitude():
     img_ud = undistort(img, r)
     cv2.imwrite(prefix+imgname+"_dl.jpg", img_ud)
 
+def MergeYml():
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/marked_data/"
+    yml1 = "controlPoints_1/raw_controlPoints_part1.yml"
+    yml2 = "controlPoints_2/raw_controlPoints.yml"
+    cvfs1 = cv2.FileStorage(prefix+yml1, cv2.FileStorage_READ)
+    cvfs2 = cv2.FileStorage(prefix+yml2, cv2.FileStorage_READ)
+    cvfs_w = cv2.FileStorage(prefix+"controlPoints_merged.yml", cv2.FileStorage_WRITE)
+
+    p1 = cvfs1.getNode("p").mat().tolist()
+    q1 = cvfs1.getNode("q").mat().tolist()
+    p2 = cvfs2.getNode("p").mat().tolist()
+    q2 = cvfs2.getNode("q").mat().tolist()
+    p = p1 + p2
+    q = q1 + q2
+    cvfs_w.write("p", np.array(p))
+    cvfs_w.write("q", np.array(q))
+
+    cvfs1.release()
+    cvfs2.release()
+    cvfs_w.release()
+
+def DrawPointsFromYml():
+    prefix="/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/marked_data/"
+    yml = "controlPoints_merged.yml"
+    name1 = "360_0103_left_right_down"
+    name2 = "360_0103_right_rotate_left_down"
+    img_l = cv2.imread(prefix+name1+".jpg")
+    img_r = cv2.imread(prefix+name2+".jpg")
+
+    cvfs = cv2.FileStorage(prefix+yml, cv2.FileStorage_READ)
+    p = cvfs.getNode("p").mat().tolist()
+    q = cvfs.getNode("q").mat().tolist()
+    for i in p:
+        cv2.circle(img_l, (i[1], i[0]), 2, (0, 255, 0), -1)
+    for j in q:
+        cv2.circle(img_r, (j[1], j[0]), 2, (0, 255, 0), -1)
+
+    cvfs.release()
+    cv2.imwrite(prefix+name1+"_marked.jpg", img_l)
+    cv2.imwrite(prefix+name2+"_marked.jpg", img_r)
+
+def ForwardEquiRecProjection(x_src, y_src):
+    # W = (int)(1920*(360/195))
+    # H = 1920
+    # f_a = 195
+    # f = (math.pi/180)*f_a       # convert degree to radius
+    # theta = f*(x_src/W) - 0.5
+    # phi = f*(y_src/H) - 0.5
+    # x = math.cos(phi)*math.sin(theta)
+    # y = math.cos(phi)*math.cos(theta)
+    # z = math.sin(phi)
+    # lu = (H/f)*(1/math.tan(math.sqrt(x*x + z*z)/y))
+    # theta = 1/math.tan(z/x)
+    # x_dst = 0.5*W + lu*math.cos(theta)
+    # y_dst = 0.5*H + lu*math.sin(theta)
+
+    w_src = 1914
+    h_src = 1900
+    R195 = 1009
+    R180 = 900
+    rate = 2*(R195 - R180) / (195 - 180)
+    FOV = (180 + (w_src-2*R180)/rate)*(math.pi/180)
+    FOV2 = (180 + (h_src-2*R180)/rate)*(math.pi/180)
+    theta = math.pi * (x_src/w_src - 0.5)  # -pi ~ pi
+    phi = math.pi * (y_src/h_src - 0.5) # -pi/2 ~ pi/2
+    x = math.cos(phi)*math.sin(theta)
+    y = math.cos(phi)*math.cos(theta)
+    z = math.sin(phi)
+    theta = math.atan2(z,x)
+    phi = math.atan2(math.sqrt(x*x + z*z), y)
+    r = w_src * phi / FOV
+    r2 = h_src * phi / FOV2
+    x_dst = 0.5*w_src + r*math.cos(theta)
+    y_dst = 0.5*h_src + r2*math.sin(theta)
+
+    return (x_dst,y_dst)
+
+def RevEquiRecProjection(x_dst, y_dst, w_rad):
+    phi = x_dst / w_rad
+    theta = -y_dst / w_rad + math.pi/2
+    if theta < 0:
+        theta = -theta
+        phi = phi + math.pi
+    if theta > math.pi:
+        theta = math.pi - (theta - math.pi)
+        phi = phi + math.pi
+    s = math.sin(theta)
+    v0 = s * math.sin(phi)
+    v1 = math.cos(theta)
+    r = math.sqrt(v0*v0 + v1*v1)
+    theta = w_rad*math.atan2(r, s*math.cos(phi))
+
+    src_x = theta * v0 / r
+    src_y = theta * v1 / r
+    
+    return (src_x, src_y)
+
+def GetUndistortMap():
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/"
+    yml = "equirectangular.yml"
+    cvfs = cv2.FileStorage(prefix+yml, cv2.FileStorage_WRITE)
+
+    # m_wd = (int)(1920*(360/195))
+    # m_wd = (int)(1920*(360/183.5))
+    # m_wd = m_wd - (m_wd%2)  # make it even
+    src_w = 1914
+    src_h = 1900
+    m_wd = src_w * 2
+    m_hd = src_h
+    # w_rad = m_wd / (2*math.pi)
+    # w2 = m_wd/2 - 0.5
+    # h2 = m_hd/2 - 0.5
+    # ws2 = src_w/2 - 0.5
+    # hs2 = src_h/2 - 0.5
+    xMapArr = np.zeros((m_hd, m_wd)).astype(np.float32)
+    yMapArr = np.zeros((m_hd, m_wd)).astype(np.float32)
+
+    for y in range(0,m_hd):
+        # y_dst = y - h2
+        # for x in range(-int(m_wd/4),int(3*m_wd/4)):
+        for x in range(0,m_wd):
+            # x_dst = x - w2
+            # (x_src, y_src) = RevEquiRecProjection(x_dst=x_dst,y_dst=y_dst,w_rad=w_rad)
+            x_dst = x + int(m_wd/4)
+            (x_src, y_src) = ForwardEquiRecProjection(x_dst, y)
+            # x_src = x_src + ws2
+            # y_src = y_src + hs2
+            xMapArr[y,x] = x_src
+            yMapArr[y,x] = y_src
+            # xMapArr[y,x] = x_src
+            # yMapArr[y,x] = y_src
+
+    # print(type(xMapArr))
+    # print(xMapArr)
+    cvfs.write("xMapArr", xMapArr)
+    cvfs.write("yMapArr", yMapArr)
+
+    cvfs.release()
+
+def DrawTransPointsFromYml():
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/marked_data/"
+    yml = "controlPoints_merged.yml"
+    imgname = "360_0103_left_deform_test"
+    cvfs = cv2.FileStorage(prefix+yml, cv2.FileStorage_READ)
+    img = cv2.imread(prefix+imgname+".jpg")
+
+    p = cvfs.getNode("p").mat().tolist()
+    for i in p:
+        # i[0] = i[0] + 960
+        # i[1] = i[1] + 960
+        (i[1], i[0]) = ForwardEquiRecProjection(i[1]+960, i[0]+960)
+        cv2.circle(img, (int(i[1]), int(i[0])), 2, (0, 255, 0), -1)
+    cv2.namedWindow("img", WINDOW_NORMAL)
+    cv2.imshow("img", img)
+    cv2.waitKey()
+
+    cvfs.release()
+
+def FirstStepCalib():
+    linewidth = 1
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/"
+    imgname = "360_0103"
+    img_raw = cv2.imread(prefix+imgname+".jpg")
+
+    isDraw = False
+    # isRotate = False
+    
+    img_l = img_raw[:, :img_raw.shape[1]//2, :]
+    img_r = img_raw[:, img_raw.shape[1]//2:, :]
+    C = (957, 950)
+    W = 1914
+    H = 1900
+    R195 = 1009
+    R180 = 914
+    R165 = R180- (R195 - R180)
+    ROUTER = R180+(W//2-R180)
+    RINNER = R180 - (ROUTER - R180)
+
+    img_l = img_l[18:1920-2, 2:1920-4, :] # (y,x,channel)      # cut extra pixels
+    if isDraw:
+        # draw valied area of fisheye with green
+        cv2.circle(img_l, C, R195, (0, 255, 0), linewidth)
+        # draw 180 degree area of fisheye with read
+        cv2.circle(img_l, C, R180, (0, 0, 255), linewidth)
+        # draw overlap area
+        cv2.circle(img_l, C, R165, (255, 255, 0), linewidth)
+        # draw acutally fuse area
+        cv2.circle(img_l, C, ROUTER, (255, 255, 255), linewidth)    # out fuse circle
+        cv2.circle(img_l, C, RINNER, (255, 255, 255), linewidth)     # inner fuse circle
+        # draw line in mid x and y
+        cv2.line(img_l, (957,0), (957,H), (255,0,0), linewidth)
+        cv2.line(img_l, (0,950), (W,950), (255,0,0), linewidth)
+        cv2.imwrite(prefix+imgname[4:]+"_left_calib.jpg", img_l)
+    else:
+        cv2.imwrite(prefix+imgname[4:]+"_left.jpg", img_l)
+
+    img_r = img_r[20:1920, 0:1920-6, :]      # cut extra pixels
+
+    # first cut to make the fish eye center in the center of the img, then rotate
+    # if isRotate:
+    #     # rotate right img to calib
+    #     Rotate_M = cv2.getRotationMatrix2D(C, -0.6, 1)
+    #     img_r = cv2.warpAffine(img_r, Rotate_M, (W,H))
+    
+    if isDraw:
+        # draw valied area of fisheye with green
+        cv2.circle(img_r, C, R195, (0, 255, 0), linewidth)
+        # draw 180 degree area of fisheye with read
+        cv2.circle(img_r, C, R180, (0, 0, 255), linewidth)
+        # draw overlap area
+        cv2.circle(img_r, C, R165, (255, 255, 0), linewidth)
+        # draw acutally fuse area
+        cv2.circle(img_r, C, ROUTER, (255, 255, 255), linewidth)    # out fuse circle
+        cv2.circle(img_r, C, RINNER, (255, 255, 255), linewidth)     # inner fuse circle
+        # draw line in mid x and y
+        cv2.line(img_r, (957,0), (957,H), (255,0,0), linewidth)
+        cv2.line(img_r, (0,950), (W,950), (255,0,0), linewidth)
+        # cv2.imwrite(prefix+imgname[4:]+"_right_rotate_calib.jpg", img_r)
+        cv2.imwrite(prefix+imgname[4:]+"_right_calib.jpg", img_r)
+    else:
+        # cv2.imwrite(prefix+imgname[4:]+"_right_rotate.jpg", img_r)
+        cv2.imwrite(prefix+imgname[4:]+"_right.jpg", img_r)
+
+def MergeTest():
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test3/"
+    imgname1 = "0103_left_calib_deform.jpg"
+    imgname2 = "0103_right_rotate_calib_deform.jpg"
+    img1 = cv2.imread(prefix+imgname1)
+    img2 = cv2.imread(prefix+imgname2)
+    img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2BGRA)
+    img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2BGRA)
+
+    # bias_l = 16
+    # bias_r = 16
+    # y_bias_l = 0
+    # y_bias_r = 9
+    bias_l = 0
+    bias_r = 0
+    y_bias_l = 0
+    y_bias_r = 0
+
+
+    img2_l = img2[:img2.shape[0]-y_bias_l, img2.shape[1]//4+bias_l:img2.shape[1]//2]
+    img2_r = img2[:img2.shape[0] - y_bias_r, img2.shape[1]//2:3*img2.shape[1]//4-bias_r]
+
+    img1[y_bias_r:, bias_r:img1.shape[1]//4] = img2_r
+    img1[y_bias_l:, 3*img1.shape[1]//4:img1.shape[1]-bias_l] = img2_l
+    cv2.imwrite(prefix+"res.jpg", img1)
+
+def genRingMask():
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/"
+    imgname1 = "0103_left"
+    imgname2 = "0103_right"
+    img1 = cv2.imread(prefix+imgname1+".jpg")
+    img2 = cv2.imread(prefix+imgname2+".jpg")
+    C = (957, 950)
+    W = 1914
+    H = 1900
+    R195 = 1009
+    R180 = 914
+    R165 = R180- (R195 - R180)
+    ROUTER = R180+(W//2-R180)
+    RINNER = R180 - (ROUTER - R180)
+    inner_ring = np.zeros_like(img1)
+    cv2.circle(inner_ring, C, RINNER, (255,255,255), -1)
+    outer_ring = np.zeros_like(img1)
+    cv2.circle(outer_ring, C, ROUTER, (255,255,255), -1)
+    ring_mask = np.zeros_like(img1)
+    cv2.bitwise_xor(inner_ring, outer_ring, ring_mask)
+    cv2.imwrite(prefix+"ring_mask.jpg", ring_mask)
+    cv2.bitwise_and(img1, ring_mask, img1)
+    cv2.bitwise_and(img2, ring_mask, img2)
+    cv2.imwrite(prefix+imgname1+"_filter.jpg", img1)
+    cv2.imwrite(prefix+imgname2+"_filter.jpg", img2)
+
 def main():
     # testCamera()
     # recordVideo()
@@ -460,9 +744,16 @@ def main():
     # cutOverlapArea()
     # markPointFunc()
     # getMarkedPoint()
-    # testYml()
     # rotateImg()
-    DoubleLongitude()
+    # DoubleLongitude()
+    # MergeYml()
+    # DrawPointsFromYml()
+    # DrawTransPointsFromYml()
+    # FirstStepCalib()
+    # GetUndistortMap()
+    testYml()
+    # MergeTest()
+    # genRingMask()
 
 
 if __name__ == '__main__':

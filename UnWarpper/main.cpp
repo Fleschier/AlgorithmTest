@@ -110,10 +110,10 @@ int main( int argc, char *argv[] )
 	String strOutputFile = argv[2];
 
 	// load input image
-//	Mat	inputFrame = imread( strInputFile );
-	Mat inputFrame;
-	Mat tempImg = imread(strInputFile);
-	cv::copyMakeBorder(tempImg, inputFrame, 0, 0 ,30 ,30, BORDER_CONSTANT, Scalar(0,0,0));
+	Mat	inputFrame = imread( strInputFile );
+//	Mat inputFrame;
+//	Mat tempImg = imread(strInputFile);
+//	cv::copyMakeBorder(tempImg, inputFrame, 0, 0 ,30 ,30, BORDER_CONSTANT, Scalar(0,0,0));
 	if( !inputFrame.data )
 	{
 		cout << "Error in loading input file\n";
@@ -194,10 +194,16 @@ int main( int argc, char *argv[] )
 	else if( MIDPOINTCIRCLE == eMethod )
 	{
 
-	    Cx = nWidth / 2;
-	    Cy = nHeight / 2;
-//	    int R = (nWidth / 2)*1.1;
-	    int R = 1020;
+	    int R;
+	    //	    Cx = nWidth / 2;
+	    //	    Cy = nHeight / 2;
+	    //	    int R = 1009;
+	    {
+	      // test left
+	      Cx = 957;
+	      Cy = 970;
+	      R = 914;
+	    }
 
 	    Mat tempFrame = inputFrame.clone();
 	    // if manual
@@ -307,8 +313,9 @@ int main( int argc, char *argv[] )
 #ifdef _DEBUG
 	    cout << "Cx = " << Cx << ", Cy = " << Cy << ", R = " << R << endl;
 	    // draw computed circle
-	    circle( tempFrame, Point( Cx, Cy ), R, CV_RGB( 0, 255, 0 ) );
+	    circle( tempFrame, Point( Cx, Cy ), R, CV_RGB( 0, 255, 0 ), 1);
 	    imshow( "Input Frame", tempFrame );
+	    imwrite("180degree_lin.jpg", tempFrame);
 	    cv::waitKey();
 #endif
 
