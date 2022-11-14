@@ -3,11 +3,13 @@
 # curDirtory = os.getcwd()
 # print(curDirtory)
 
+from audioop import bias
 from cgi import print_form
 from concurrent.futures import thread
 from readline import write_history_file
 from sys import prefix
 from time import sleep
+from tkinter import Y
 from tkinter.tix import X_REGION
 import cv2
 from cv2 import imshow
@@ -17,6 +19,7 @@ from cv2 import waitKey
 from cv2 import imwrite
 from cv2 import VideoCapture
 from cv2 import INTER_LINEAR
+from cv2 import CV_16SC3
 from torch import Size, int16
 import numpy as np
 
@@ -134,17 +137,17 @@ def extractFrame():
     cv2.imwrite(prefix+videoname+".jpg", img)
 
 def cutImg():
-    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/"
-    imgname = "360_0103_right_rotate_left"
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test4_mark_points/add_bias/"
+    imgname = "0103_right_deform"
     frame = cv2.imread(prefix+imgname+".jpg")
-    # left = frame[:, :frame.shape[1] // 2]      # 获取双鱼眼左半部分
-    # right = frame[:, frame.shape[1] // 2:]      # 获取双鱼眼右半部分
-    # cv2.imwrite(prefix+imgname+"_left.jpg", left)
-    # cv2.imwrite(prefix+imgname+"_right.jpg", right)
-    down = frame[frame.shape[0]//2:, :]
-    up = frame[:frame.shape[0]//2, :]
-    cv2.imwrite(prefix+imgname+"_down.jpg", down)
-    cv2.imwrite(prefix+imgname+"_up.jpg", up)
+    left = frame[:, :frame.shape[1] // 2]      # 获取双鱼眼左半部分
+    right = frame[:, frame.shape[1] // 2:]      # 获取双鱼眼右半部分
+    cv2.imwrite(prefix+imgname+"_left.jpg", left)
+    cv2.imwrite(prefix+imgname+"_right.jpg", right)
+    # down = frame[frame.shape[0]//2:, :]
+    # up = frame[:frame.shape[0]//2, :]
+    # cv2.imwrite(prefix+imgname+"_down.jpg", down)
+    # cv2.imwrite(prefix+imgname+"_up.jpg", up)
 
 def mremap():
     cvfs = cv2.FileStorage('rebuild.yml', cv2.FileStorage_READ)
@@ -296,9 +299,11 @@ def cutOverlapArea():
     cv2.imwrite(prefix + imgname + "_right.jpg", right)
 
 def markPointFunc():
-    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/marked_data/"
-    imgname1 = "360_0103_left_right_down_marked_1"
-    imgname2 = "360_0103_right_rotate_left_down_marked_1"
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test4_mark_points/"
+    # imgname1 = "0103_right_calib_deform_right_down"     # p
+    # imgname2 = "0103_left_calib_deform_right_down"      # q     # q不变， p --> q
+    imgname1 = "0104_right_calib_deform_left_down_p1"     
+    imgname2 = "0104_left_calib_deform_left_down_p1"      
 
     img1 = cv2.imread(prefix+imgname1+".jpg")
     img2 = cv2.imread(prefix+imgname2+".jpg")
@@ -371,17 +376,29 @@ def getMarkedPoint():
     cvfs2.release()
 
 def testYml():
-    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/"
-    imgname = "0103_left_filter"
-    cvfs = cv2.FileStorage(prefix+"equirectangular_left.yml", cv2.FileStorage_READ)
-    # imgname = "0103_right_filter"
-    # cvfs = cv2.FileStorage(prefix+"equirectangular.yml", cv2.FileStorage_READ)
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test5_undistort_add_bias/"
+
+    # # undistort
+    # # imgname = "0104_left"
+    # # cvfs = cv2.FileStorage(prefix+"equirectangular_left_bias.yml", cv2.FileStorage_READ)
+    # imgname = "0104_right"
+    # cvfs = cv2.FileStorage(prefix+"equirectangular_bias.yml", cv2.FileStorage_READ)
+
+    # img = cv2.imread(prefix+imgname+".jpg")
+    # yarr = cvfs.getNode("yMapArr").mat().astype(np.float32)
+    # xarr = cvfs.getNode("xMapArr").mat().astype(np.float32)
+    # img_deform = cv2.remap(img, xarr, yarr, interpolation=INTER_LINEAR)
+    # cv2.imwrite(prefix+imgname+"_deform.jpg", img_deform)
+
+    # mls deform
+    imgname = "0104_right_deform"
+    cvfs = cv2.FileStorage(prefix+"mls.yml", cv2.FileStorage_READ)
 
     img = cv2.imread(prefix+imgname+".jpg")
-    yarr = cvfs.getNode("yMapArr").mat().astype(np.float32)
-    xarr = cvfs.getNode("xMapArr").mat().astype(np.float32)
+    yarr = cvfs.getNode("yarr").mat().astype(np.float32)
+    xarr = cvfs.getNode("xarr").mat().astype(np.float32)
     img_deform = cv2.remap(img, xarr, yarr, interpolation=INTER_LINEAR)
-    cv2.imwrite(prefix+imgname+"_deform.jpg", img_deform)
+    cv2.imwrite(prefix+imgname+"_mls.jpg", img_deform)
 
     cvfs.release()
 
@@ -452,9 +469,9 @@ def DoubleLongitude():
     cv2.imwrite(prefix+imgname+"_dl.jpg", img_ud)
 
 def MergeYml():
-    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/marked_data/"
-    yml1 = "controlPoints_1/raw_controlPoints_part1.yml"
-    yml2 = "controlPoints_2/raw_controlPoints.yml"
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test4_mark_points/marked_data_0104/"
+    yml1 = "raw_controlPoints_p1.yml"
+    yml2 = "raw_controlPoints_p2.yml"
     cvfs1 = cv2.FileStorage(prefix+yml1, cv2.FileStorage_READ)
     cvfs2 = cv2.FileStorage(prefix+yml2, cv2.FileStorage_READ)
     cvfs_w = cv2.FileStorage(prefix+"controlPoints_merged.yml", cv2.FileStorage_WRITE)
@@ -473,24 +490,41 @@ def MergeYml():
     cvfs_w.release()
 
 def DrawPointsFromYml():
-    prefix="/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/marked_data/"
-    yml = "controlPoints_merged.yml"
-    name1 = "360_0103_left_right_down"
-    name2 = "360_0103_right_rotate_left_down"
+    # prefix="/home/cyx/programes/Pictures/gear360/lab_data/new_test4_mark_points/marked_data_0103/"
+    # yml = "biasFix_extend.yml"
+    prefix="/home/cyx/programes/Pictures/gear360/lab_data/new_test4_mark_points/marked_data_0104/"
+    yml = "fix_cut_bias.yml"
+    name1 = "0104_right_deform_l"
+    name2 = "0104_left_calib_deform_left"
     img_l = cv2.imread(prefix+name1+".jpg")
     img_r = cv2.imread(prefix+name2+".jpg")
 
     cvfs = cv2.FileStorage(prefix+yml, cv2.FileStorage_READ)
     p = cvfs.getNode("p").mat().tolist()
     q = cvfs.getNode("q").mat().tolist()
+    # p = p[:-5]
+    # print(len(p))
+    # q = q[:-3]
+    # print(len(q))
     for i in p:
-        cv2.circle(img_l, (i[1], i[0]), 2, (0, 255, 0), -1)
+        cv2.circle(img_l, (int(i[1]), int(i[0])), 2, (0, 255, 0), -1)
     for j in q:
-        cv2.circle(img_r, (j[1], j[0]), 2, (0, 255, 0), -1)
+        cv2.circle(img_r, (int(j[1]), int(j[0])), 2, (0, 255, 0), -1)
 
     cvfs.release()
+    # cvfs2 = cv2.FileStorage(prefix+"fix_cut_bias.yml", cv2.FileStorage_WRITE)
+    # for i in p:
+    #     i[1] = i[1] - 18
+    # for j in q:
+    #     j[1] = j[1] - 18
+
+    # cvfs2.write("p", np.array(p))
+    # cvfs2.write("q", np.array(q))
+    # cvfs2.release()
+
     cv2.imwrite(prefix+name1+"_marked.jpg", img_l)
     cv2.imwrite(prefix+name2+"_marked.jpg", img_r)
+    
 
 def ForwardEquiRecProjection(x_src, y_src):
     # W = (int)(1920*(360/195))
@@ -609,13 +643,13 @@ def DrawTransPointsFromYml():
 
     cvfs.release()
 
-def FirstStepCalib():
-    linewidth = 1
-    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/"
-    imgname = "360_0103"
+def FirstStepCalib(prefix, imgname, isDraw = False, linewidth=1):
+    # linewidth = 1
+    # prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/"
+    # imgname = "360_0103"
     img_raw = cv2.imread(prefix+imgname+".jpg")
 
-    isDraw = False
+    # isDraw = False
     # isRotate = False
     
     img_l = img_raw[:, :img_raw.shape[1]//2, :]
@@ -676,29 +710,44 @@ def FirstStepCalib():
 
 def MergeTest():
     prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test3/"
-    imgname1 = "0103_left_calib_deform.jpg"
-    imgname2 = "0103_right_rotate_calib_deform.jpg"
+    imgname1 = "0104_left_deform.jpg"
+    imgname2 = "0104_right_deform_mls.jpg"
     img1 = cv2.imread(prefix+imgname1)
     img2 = cv2.imread(prefix+imgname2)
-    img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2BGRA)
-    img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2BGRA)
 
-    # bias_l = 16
-    # bias_r = 16
-    # y_bias_l = 0
-    # y_bias_r = 9
-    bias_l = 0
-    bias_r = 0
-    y_bias_l = 0
-    y_bias_r = 0
+    # img1[:, :1896//2] = img2[:, :1896//2]
+    # img1[:, 1896+1900//2:] = img2[:, 1896+1900//2:]
 
+    # cv2.imwrite(prefix+"res.jpg", img1)
 
-    img2_l = img2[:img2.shape[0]-y_bias_l, img2.shape[1]//4+bias_l:img2.shape[1]//2]
-    img2_r = img2[:img2.shape[0] - y_bias_r, img2.shape[1]//2:3*img2.shape[1]//4-bias_r]
+    H = 1900
+    W = 3796
+    overlap = 30
+    mask1 = np.concatenate((
+        np.zeros((H, 1896//2 - overlap)), 
+        np.ones((H, 1896//2 + 2*overlap + 1900//2))*255, 
+        np.zeros((H, 1900//2-overlap))), axis=1).astype('uint8')
 
-    img1[y_bias_r:, bias_r:img1.shape[1]//4] = img2_r
-    img1[y_bias_l:, 3*img1.shape[1]//4:img1.shape[1]-bias_l] = img2_l
-    cv2.imwrite(prefix+"res.jpg", img1)
+    mask2 = np.concatenate(
+        (np.ones((H, 1896//2 + overlap))*255, 
+        np.zeros((H, 1896//2 - 2*overlap + 1900//2)), 
+        np.ones((H, 1900//2+overlap))*255), axis=1).astype('uint8')
+    
+    cv2.imwrite(prefix+"mask1.jpg", mask1)
+    cv2.imwrite(prefix+"mask2.jpg", mask2)
+
+    blender = cv2.detail.Blender_createDefault(cv2.detail.BLENDER_MULTI_BAND, try_gpu=False)
+    blender.prepare((0,0,W,H))
+    blender.feed(img1.astype(np.int16), mask1, (0,0))       # convert to CV_16SC3
+    blender.feed(img2.astype(np.int16), mask2, (0,0))
+
+    res = (np.zeros((H,W,3))).astype('uint8')
+    res_mask = (np.ones((H,W))*255).astype('uint8')
+
+    out, out_mask = blender.blend(res,res_mask)
+
+    cv2.imwrite(prefix+'out_blended.jpg',out.astype('uint8'))
+    cv2.imwrite(prefix+"outmask.jpg", out_mask)
 
 def genRingMask():
     prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_2/"
@@ -726,6 +775,149 @@ def genRingMask():
     cv2.imwrite(prefix+imgname1+"_filter.jpg", img1)
     cv2.imwrite(prefix+imgname2+"_filter.jpg", img2)
 
+def CalcbiasFromPointsAndExtend():
+    # prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test4_mark_points/marked_data_0103/"
+    # yml = "raw_controlPoints.yml"
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test4_mark_points/marked_data_0104/"
+    yml = "controlPoints_merged.yml"
+    cvfs = cv2.FileStorage(prefix+yml, cv2.FileStorage_READ)
+
+    p = cvfs.getNode("p").mat().tolist()
+    q = cvfs.getNode("q").mat().tolist()
+    bias_xs = []
+    bias_ys = []
+    for i in range(len(p)):
+        bias_ys.append(q[i][0] - p[i][0])
+        bias_xs.append(q[i][1] - p[i][1])
+    
+    bias_x = sum(bias_xs)/len(bias_xs)
+    # bias_x = max(bias_xs)
+    bias_y = sum(bias_ys[:4])/4
+    if bias_x < 0:
+        bias_x = int(bias_x - 0.5)
+    else:
+        bias_x = int(bias_x + 0.5)
+    if bias_y < 0:
+        bias_y = int(bias_y - 0.5)
+    else:
+        bias_y = int(bias_y + 0.5)
+    print(bias_ys[:4])
+    print("bias_x: ", bias_x)
+    print("bias_y: ", bias_y)
+    cvfs2 = cv2.FileStorage(prefix+"biasFix_extend.yml", cv2.FileStorage_WRITE)
+    for i in range(len(p)):     # p --> q
+        p[i][1] = p[i][1] + bias_x
+        p[i][0] = p[i][0] + 950   # extend to full img
+        # add bias to y
+        p[i][0] = p[i][0] + bias_y
+        # 对称翻转
+        y1 = 950 - (p[i][0] - 950)     
+        # for each points add an extra points
+        p.append([y1, p[i][1]])      #(y,x)
+    
+    for i in range(len(q)):
+        q[i][0] = q[i][0] + 950   # extend to full img
+        y1 = 950 - (q[i][0] - 950)     # 对称翻转
+        # for each points add an extra points
+        q.append([y1, q[i][1]])      #(y,x)
+        
+    cvfs2.write("p", np.array(p))
+    cvfs2.write("q", np.array(q))
+
+    cvfs.release()
+    cvfs2.release()
+
+def genUndistortMapWithBias():
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test5_undistort_add_bias/"
+    raw_ymlname_l = "equirectangular_left"
+    raw_ymlname_r = "equirectangular"
+    imgname="360_0103"
+    FirstStepCalib(prefix, imgname)
+
+    cvfs_l = cv2.FileStorage(prefix+raw_ymlname_l+".yml", cv2.FileStorage_READ)
+    cvfs_r = cv2.FileStorage(prefix+raw_ymlname_r+".yml", cv2.FileStorage_READ)
+    cvfs_l_new = cv2.FileStorage(prefix+raw_ymlname_l+"_bias.yml", cv2.FileStorage_WRITE)
+    cvfs_r_new = cv2.FileStorage(prefix+raw_ymlname_r+"_bias.yml", cv2.FileStorage_WRITE)
+
+    xMapArr = cvfs_r.getNode("xMapArr").mat()
+    yMapArr = cvfs_r.getNode("yMapArr").mat()
+    r_bias_x = -11
+    r_bias_y = -6
+    l_bias_x = 18
+    l_bias_y = 15
+
+    W = xMapArr.shape[1]
+    H = xMapArr.shape[0]
+    W2 = W//2
+    xMapArr[l_bias_y:, l_bias_x:W2] = xMapArr[:H-l_bias_y, :W2-l_bias_x]
+    xMapArr[:H+r_bias_y, W2:W+r_bias_x] = xMapArr[-r_bias_y:, W2-r_bias_x:]
+    # xMapArr = xMapArr[:, l_bias_x:W+r_bias_x]
+    xMapArr = xMapArr[:, l_bias_x:W+r_bias_x - 3]   # 再减3是为了让宽为4的整数倍
+    cvfs_r_new.write("xMapArr", xMapArr)
+    yMapArr[l_bias_y:, l_bias_x:W2] = yMapArr[:H-l_bias_y, :W2-l_bias_x]
+    yMapArr[:H+r_bias_y, W2:W+r_bias_x] = yMapArr[-r_bias_y:, W2-r_bias_x:]
+    yMapArr = yMapArr[:, l_bias_x:W+r_bias_x - 3]
+    cvfs_r_new.write("yMapArr", yMapArr)
+
+    cvfs_r.release()
+    cvfs_r_new.release()
+
+    xMapArr = cvfs_l.getNode("xMapArr").mat()
+    yMapArr = cvfs_l.getNode("yMapArr").mat()
+    xMapArr = xMapArr[:, l_bias_x:W+r_bias_x - 3]  # 再减3是为了让宽为4的整数倍
+    yMapArr = yMapArr[:, l_bias_x:W+r_bias_x - 3]
+    cvfs_l_new.write("xMapArr", xMapArr)
+    cvfs_l_new.write("yMapArr", yMapArr)
+    cvfs_l.release()
+    cvfs_l_new.release()
+
+def MergeMlsYmlAndCut():
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test5_undistort_add_bias/mls/"
+    yml_l = "res_part_l"
+    yml_r = "res_part_r"
+    cvfs1 = cv2.FileStorage(prefix+yml_l+".yml", cv2.FileStorage_READ)
+    cvfs2 = cv2.FileStorage(prefix+yml_r+".yml", cv2.FileStorage_READ)
+    cvfs_w = cv2.FileStorage(prefix+"mls.yml", cv2.FileStorage_WRITE)
+
+    # r_bias_x = -11
+    # r_bias_y = -6
+    # l_bias_x = 18
+    # l_bias_y = 15
+
+    yarr1 = cvfs1.getNode("yarr").mat()
+    xarr1 = cvfs1.getNode("xarr").mat()
+    yarr2 = cvfs2.getNode("yarr").mat()
+    xarr2 = cvfs2.getNode("xarr").mat()
+    # rescale to full img
+    xarr2 = xarr2 + xarr1.shape[1]
+    # create full mls map 
+    yarr = np.zeros((yarr1.shape[0], yarr1.shape[1]+yarr2.shape[1]), dtype=int)
+    xarr = np.zeros((xarr1.shape[0], xarr1.shape[1]+xarr2.shape[1]), dtype=int)
+    yarr[:, :yarr1.shape[1]] = yarr1
+    yarr[:, yarr1.shape[1]:] = yarr2
+    xarr[:, :xarr1.shape[1]] = xarr1
+    xarr[:, xarr1.shape[1]:] = xarr2
+
+    # # cut to fit the bias
+    # yarr = yarr[:, l_bias_x:yarr.shape[1]+r_bias_x - 3] # 再减3是为了让宽为4的整数倍
+    # xarr = xarr[:, l_bias_x:xarr.shape[1]+r_bias_x - 3]
+
+    cvfs_w.write("yarr", yarr)
+    cvfs_w.write("xarr", xarr)
+
+    cvfs1.release()
+    cvfs2.release()
+    cvfs_w.release()
+
+def AsymmetricCut():
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test5_undistort_add_bias/"
+    imgname = "0104_right_deform"
+    img = cv2.imread(prefix+imgname+".jpg")
+    img_l = img[:, :1896]
+    img_r = img[:, 1896:1896+1900]
+    cv2.imwrite(prefix+imgname+"_l.jpg", img_l)
+    cv2.imwrite(prefix+imgname+"_r.jpg", img_r)
+
 def main():
     # testCamera()
     # recordVideo()
@@ -747,13 +939,21 @@ def main():
     # rotateImg()
     # DoubleLongitude()
     # MergeYml()
-    # DrawPointsFromYml()
+
     # DrawTransPointsFromYml()
     # FirstStepCalib()
     # GetUndistortMap()
-    testYml()
-    # MergeTest()
+    MergeTest()
     # genRingMask()
+
+    # CalcbiasFromPointsAndExtend()
+    # DrawPointsFromYml()
+    # genUndistortMapWithBias()
+    # MergeMlsYmlAndCut()
+    # AsymmetricCut()
+
+    # testYml()
+
 
 
 if __name__ == '__main__':
