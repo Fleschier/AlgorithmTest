@@ -11,6 +11,7 @@ from sys import prefix
 from time import sleep
 from tkinter import Y
 from tkinter.tix import X_REGION
+from typing import overload
 import cv2
 from cv2 import imshow
 from cv2 import WINDOW_NORMAL
@@ -376,29 +377,29 @@ def getMarkedPoint():
     cvfs2.release()
 
 def testYml():
-    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test5_undistort_add_bias/"
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_6/"
 
-    # # undistort
-    # # imgname = "0104_left"
-    # # cvfs = cv2.FileStorage(prefix+"equirectangular_left_bias.yml", cv2.FileStorage_READ)
+    # undistort
+    imgname = "0104_left"
+    cvfs = cv2.FileStorage(prefix+"equirectangular_left_bias_shrink.yml.gz", cv2.FileStorage_READ)
     # imgname = "0104_right"
-    # cvfs = cv2.FileStorage(prefix+"equirectangular_bias.yml", cv2.FileStorage_READ)
-
-    # img = cv2.imread(prefix+imgname+".jpg")
-    # yarr = cvfs.getNode("yMapArr").mat().astype(np.float32)
-    # xarr = cvfs.getNode("xMapArr").mat().astype(np.float32)
-    # img_deform = cv2.remap(img, xarr, yarr, interpolation=INTER_LINEAR)
-    # cv2.imwrite(prefix+imgname+"_deform.jpg", img_deform)
-
-    # mls deform
-    imgname = "0104_right_deform"
-    cvfs = cv2.FileStorage(prefix+"mls.yml", cv2.FileStorage_READ)
+    # cvfs = cv2.FileStorage(prefix+"equirectangular_bias_mls.yml", cv2.FileStorage_READ)
 
     img = cv2.imread(prefix+imgname+".jpg")
-    yarr = cvfs.getNode("yarr").mat().astype(np.float32)
-    xarr = cvfs.getNode("xarr").mat().astype(np.float32)
+    yarr = cvfs.getNode("yMapArr").mat().astype(np.float32)
+    xarr = cvfs.getNode("xMapArr").mat().astype(np.float32)
     img_deform = cv2.remap(img, xarr, yarr, interpolation=INTER_LINEAR)
-    cv2.imwrite(prefix+imgname+"_mls.jpg", img_deform)
+    cv2.imwrite(prefix+imgname+"_deform_shrink.jpg", img_deform)
+
+    # # mls deform
+    # imgname = "0104_right_deform"
+    # cvfs = cv2.FileStorage(prefix+"mls.yml", cv2.FileStorage_READ)
+
+    # img = cv2.imread(prefix+imgname+".jpg")
+    # yarr = cvfs.getNode("yarr").mat().astype(np.float32)
+    # xarr = cvfs.getNode("xarr").mat().astype(np.float32)
+    # img_deform = cv2.remap(img, xarr, yarr, interpolation=INTER_LINEAR)
+    # cv2.imwrite(prefix+imgname+"_mls.jpg", img_deform)
 
     cvfs.release()
 
@@ -918,6 +919,81 @@ def AsymmetricCut():
     cv2.imwrite(prefix+imgname+"_l.jpg", img_l)
     cv2.imwrite(prefix+imgname+"_r.jpg", img_r)
 
+def ApplyMlsOnUndistortMap():
+    prefix="/home/cyx/programes/Pictures/gear360/lab_data/new_test_6/"
+    yml="equirectangular_left_bias"
+    mls ="mls"
+    cvfs1 = cv2.FileStorage(prefix+yml+".yml", cv2.FileStorage_READ)
+    cvfs2 = cv2.FileStorage(prefix+mls+".yml", cv2.FileStorage_READ)
+    cvfs_w = cv2.FileStorage(prefix+yml+"_mls.yml", cv2.FileStorage_WRITE)
+
+    xMapArr = cvfs1.getNode("xMapArr").mat()
+    yMapArr = cvfs1.getNode("yMapArr").mat()
+    xarr = cvfs2.getNode("xarr").mat().astype(np.float32)
+    yarr = cvfs2.getNode("yarr").mat().astype(np.float32)
+    xMapArr1 = cv2.remap(xMapArr, xarr, yarr, interpolation=INTER_LINEAR)
+    yMapArr1 = cv2.remap(yMapArr, xarr, yarr, interpolation=INTER_LINEAR)
+
+    cvfs_w.write("xMapArr", xMapArr1)
+    cvfs_w.write("yMapArr", yMapArr1)
+
+    cvfs1.release()
+    cvfs2.release()
+    cvfs_w.release()
+
+def shrinkUndistortMap():
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_6/"
+    yml_l = "equirectangular_left_bias"
+    yml_r = "equirectangular_bias_mls"
+
+    overlap = 30
+
+    # left
+    cvfs = cv2.FileStorage(prefix+yml_l+".yml", cv2.FileStorage_READ)
+    cvfs_w = cv2.FileStorage(prefix+yml_l+"_shrink.yml.gz", cv2.FileStorage_WRITE)
+    xMapArr = cvfs.getNode("xMapArr").mat()
+    yMapArr = cvfs.getNode("yMapArr").mat()
+    xMapArr = xMapArr[:, xMapArr.shape[1]//4 - overlap:3*xMapArr.shape[1]//4 + overlap]
+    yMapArr = yMapArr[:, yMapArr.shape[1]//4 - overlap:3*yMapArr.shape[1]//4 + overlap]
+    cvfs_w.write("xMapArr", xMapArr)
+    cvfs_w.write("yMapArr", yMapArr)
+    cvfs_w.release()
+    cvfs.release()
+
+    #right
+    cvfs = cv2.FileStorage(prefix+yml_r+".yml", cv2.FileStorage_READ)
+    cvfs_w = cv2.FileStorage(prefix+yml_r+"_shrink.yml.gz", cv2.FileStorage_WRITE)
+    xMapArr = cvfs.getNode("xMapArr").mat()
+    yMapArr = cvfs.getNode("yMapArr").mat()
+    xMapArr = np.concatenate(
+        (xMapArr[:, :xMapArr.shape[1]//4+overlap], xMapArr[:, 3*xMapArr.shape[1]//4 - overlap:])
+        , axis=1)
+    yMapArr = np.concatenate(
+        (yMapArr[:, :yMapArr.shape[1]//4+overlap], yMapArr[:, 3*yMapArr.shape[1]//4 - overlap:])
+        , axis=1)
+    cvfs_w.write("xMapArr", xMapArr)
+    cvfs_w.write("yMapArr", yMapArr)
+    cvfs_w.release()
+    cvfs.release()
+
+def ZipUndistortMap():
+    prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_6/"
+    # yml = "equirectangular_left_bias"
+    yml = "mls"
+    cvfs = cv2.FileStorage(prefix+yml+".yml", cv2.FileStorage_READ)
+    cvfs_w = cv2.FileStorage(prefix+yml+".yml.gz", cv2.FileStorage_WRITE)
+    # xMapArr = cvfs.getNode("xMapArr").mat()
+    # yMapArr = cvfs.getNode("yMapArr").mat()
+    # cvfs_w.write("xMapArr", xMapArr)
+    # cvfs_w.write("yMapArr", yMapArr)
+    xMapArr = cvfs.getNode("xarr").mat()
+    yMapArr = cvfs.getNode("yarr").mat()
+    cvfs_w.write("xarr", xMapArr)
+    cvfs_w.write("yarr", yMapArr)
+    
+    cvfs_w.release()
+    cvfs.release()
+
 def main():
     # testCamera()
     # recordVideo()
@@ -943,7 +1019,7 @@ def main():
     # DrawTransPointsFromYml()
     # FirstStepCalib()
     # GetUndistortMap()
-    MergeTest()
+    # MergeTest()
     # genRingMask()
 
     # CalcbiasFromPointsAndExtend()
@@ -951,8 +1027,12 @@ def main():
     # genUndistortMapWithBias()
     # MergeMlsYmlAndCut()
     # AsymmetricCut()
+    # ApplyMlsOnUndistortMap()
+    # shrinkUndistortMap()
+    ZipUndistortMap()
 
     # testYml()
+
 
 
 

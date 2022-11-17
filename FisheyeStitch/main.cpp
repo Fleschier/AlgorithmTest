@@ -3,6 +3,11 @@
 #include"fisheyestitcher.h"
 #include"test/ImageStitch.h"
 
+#include<chrono>
+
+using namespace std;
+using namespace chrono;
+
 void Show(){
   Mat img;
   VideoCapture cap("./cam3.mp4");
@@ -132,12 +137,49 @@ void record(){
     }
 }
 
+void DulFisheyeTest(){
+   string prefix = "/home/cyx/programes/Pictures/gear360/lab_data/new_test_6/";
+   string yml_l = "equirectangular_left_bias.yml";
+   string yml_r = "equirectangular_bias_mls.yml";
+   string testImgname = "0103_right";
+   Mat imgIn = imread(prefix+testImgname+".jpg");
+   Mat imgOut;
+   Mat xMapArr, yMapArr;
+   cv::FileStorage cvfs(prefix+yml_r, FileStorage::READ);
+   if( cvfs.isOpened())
+     {
+       cvfs["xMapArr"] >> xMapArr;
+       cvfs["yMapArr"] >> yMapArr;
+       cvfs.release();
+     }
+   else
+     {
+       CV_Error_(cv::Error::StsBadArg,
+                 ("Cannot open map file"));
+     }
+   for(int i = 0; i < 100; i++){
+       auto begin = system_clock::now();
+       cv::remap(imgIn,imgOut,xMapArr,yMapArr,cv::INTER_LINEAR);
+       auto end = system_clock::now();
+       auto duration = duration_cast<microseconds>(end - begin);
+       cout << "one frame total spends "
+            << double(duration.count()) * microseconds::period::num / microseconds::period::den
+            << "seconds" << endl;
+     }
+
+
+   cv::imwrite(prefix+testImgname+"_mlsDeform.jpg", imgOut);
+   printf("defrom done!\n");
+
+}
+
 int main(int argc, char *argv[])
 {
-//      Show();
-//      test();
-    //  cutUnwarpedTest();
-    stitcherTest();
-//  fullStitchTest();
-//  record();
+  //      Show();
+  //      test();
+  //  cutUnwarpedTest();
+  //    stitcherTest();
+  //  fullStitchTest();
+  //  record();
+  DulFisheyeTest();
 }
