@@ -36,7 +36,8 @@ SOURCES += \
 
 HEADERS += \
         mainwindow.h \
-    stitcher.h
+    stitcher.h \
+    threadsafe_queue.hpp
 
 FORMS += \
         mainwindow.ui
