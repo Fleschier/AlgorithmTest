@@ -12,6 +12,9 @@ MainWindow::MainWindow(QWidget *parent) :
       printf("error while init stitcher!\n return ...");
       exit(-1);
     }
+  printf("test generate\n");
+//  mStitcher.TestGenerate(2);
+  mStitcher.TestGenerateVideo();
 }
 
 MainWindow::~MainWindow()
