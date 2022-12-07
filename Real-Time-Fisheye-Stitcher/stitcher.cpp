@@ -18,6 +18,14 @@ using namespace cv;
 #define    P4_     6.1997e-08
 #define    P5_    -6.9432e-05
 #define    P6_     0.9976
+//#define    P1_     -6.82564199647755E-17
+//#define    P2_     1.45146475845449E-13
+//#define    P3_     -8.36765527228239E-11
+//#define    P4_     -1.6793129839737E-08
+//#define    P5_     -4.67623718248117E-05
+//#define    P6_     0.995854937248903
+
+#define _PI 3.1415926
 
 uint FishEyeStitcher::current_idx = 0;
 
@@ -26,7 +34,7 @@ FishEyeStitcher::FishEyeStitcher(){
 }
 
 bool FishEyeStitcher::Init(){
-  _overlap = 40;
+  _overlap = 45;
 
   rc_l = Rect(2, 18, 1920-6, 1920-20);
   rc_r = Rect(0+1920, 20, 1920-6, 1920-20);
@@ -96,7 +104,7 @@ bool FishEyeStitcher::__preProcessThread(int area_idx){
 #if TESTGENERATE
 void FishEyeStitcher::TestGenerate(int type){
 
-  Mat test = imread("/home/cyx/programes/Pictures/gear360/lab_data/360_0107.jpg");
+  Mat test = imread("/home/fleschier/programes/Pictures/gear360/lab_data/360_0108.jpg");
   Mat img_l = test(rc_l);
   bitwise_and(img_l, _valid_area_mask, img_l);
   Mat img_r = test(rc_r);
@@ -114,8 +122,8 @@ void FishEyeStitcher::TestGenerate(int type){
            << "seconds" << endl;
       __compenLightFO(img_r, img_r_comp);
 
-      cv::imshow("img_l_comp", img_l_comp);
-      cv::imshow("img_r_comp", img_r_comp);
+//      cv::imshow("img_l_comp", img_l_comp);
+//      cv::imshow("img_r_comp", img_r_comp);
     }
   else{
       img_l_comp = img_l;
@@ -123,10 +131,10 @@ void FishEyeStitcher::TestGenerate(int type){
     }
 
   Mat ud_l, ud_r;
-  cv::remap(img_l_comp, ud_l, _xMapArr_l, _yMapArr_l, CV_INTER_LINEAR);
-  cv::remap(img_r_comp, ud_r, _xMapArr_r, _yMapArr_r, CV_INTER_LINEAR);
-  cv::imshow("ud_l", ud_l);
-  cv::imshow("ud_r", ud_r);
+  cv::remap(img_l_comp, ud_l, _xMapArr_l, _yMapArr_l, INTER_LINEAR);
+  cv::remap(img_r_comp, ud_r, _xMapArr_r, _yMapArr_r, INTER_LINEAR);
+//  cv::imshow("ud_l", ud_l);
+//  cv::imshow("ud_r", ud_r);
 
   ud_r.copyTo(_pano);
   ud_l(Rect(1896/2,0, 1896/2+1900/2, _pano.rows)).copyTo(_pano(Rect(1896/2,0, 1896/2+1900/2, _pano.rows)));
@@ -230,13 +238,17 @@ void FishEyeStitcher::TestGenerate(int type){
   auto cmpen_begin = system_clock::now();
   int template_area_width = 200;
   int bias_width = 30;
+  int bottom_top_cut = 0;
 //  __compenLightFallOff(Rect(1896/2-_overlap,0,2*_overlap,_pano.rows),
 //                       Rect(1896/2-_overlap-template_area_width,0,template_area_width,_pano.rows),
 //                       Rect(1896/2+_overlap,0,template_area_width,_pano.rows),
 //                       1);
+//  __compenLightFallOff(Rect(1896/2-_overlap-bias_width,0,2*(_overlap+bias_width),_pano.rows),
+//                       Rect(1896/2-_overlap-bias_width-template_area_width,0,template_area_width+bias_width,_pano.rows),
+//                       Rect(1896/2+_overlap,0,template_area_width+bias_width,_pano.rows));
   __compenLightFallOff(Rect(1896/2-_overlap-bias_width,0,2*(_overlap+bias_width),_pano.rows),
-                       Rect(1896/2-_overlap-bias_width-template_area_width,0,template_area_width+bias_width,_pano.rows),
-                       Rect(1896/2+_overlap,0,template_area_width+bias_width,_pano.rows));
+                       Rect(1896/2-_overlap-bias_width-template_area_width,bottom_top_cut,template_area_width+bias_width,_pano.rows-2*bottom_top_cut),
+                       Rect(1896/2+_overlap,bottom_top_cut,template_area_width+bias_width,_pano.rows-2*bottom_top_cut));
   auto cmpen_end = system_clock::now();
   auto cmpen_duration = duration_cast<microseconds>(cmpen_end - cmpen_begin);
   cout << "one frame light compensation spends: "
@@ -246,19 +258,23 @@ void FishEyeStitcher::TestGenerate(int type){
 //                       Rect(1896+1900/2-_overlap-template_area_width,0,template_area_width,_pano.rows),
 //                       Rect(1896+1900/+_overlap,0,template_area_width,_pano.rows),
 //                       1);
+//  __compenLightFallOff(Rect(1896+1900/2-_overlap-bias_width,0,2*(_overlap+bias_width),_pano.rows),
+//                       Rect(1896+1900/2-_overlap-bias_width-template_area_width,0,template_area_width+bias_width,_pano.rows),
+//                       Rect(1896+1900/2+_overlap,0,template_area_width+bias_width,_pano.rows));
   __compenLightFallOff(Rect(1896+1900/2-_overlap-bias_width,0,2*(_overlap+bias_width),_pano.rows),
-                       Rect(1896+1900/2-_overlap-bias_width-template_area_width,0,template_area_width+bias_width,_pano.rows),
-                       Rect(1896+1900/2+_overlap,0,template_area_width+bias_width,_pano.rows));
+                       Rect(1896+1900/2-_overlap-bias_width-template_area_width,bottom_top_cut,template_area_width+bias_width,_pano.rows-2*bottom_top_cut),
+                       Rect(1896+1900/2+_overlap,bottom_top_cut,template_area_width+bias_width,_pano.rows-2*bottom_top_cut));
+
 
   //  cv::imshow("pano", _pano);
-  cv::imwrite("/home/cyx/programes/Pictures/gear360/lab_data/360_0107_pano.jpg", _pano);
+  cv::imwrite("/home/fleschier/programes/Pictures/gear360/lab_data/360_0108_pano.jpg", _pano);
   //  cv::imwrite("/home/cyx/programes/Pictures/gear360/lab_data/360_0103_roi_r.jpg", roi_r);
 
-  cv::waitKey();
+//  cv::waitKey();
 }
 
 void FishEyeStitcher::TestGenerateVideo(){
-  string prefix = "/home/cyx/programes/Videos/gear360/";
+  string prefix = "/home/fleschier/programes/Videos/gear360/";
   string videoname = "360_0108";
   VideoCapture cap;
   cap.open(prefix+videoname+".MP4");
@@ -288,8 +304,8 @@ void FishEyeStitcher::TestGenerateVideo(){
         }
 
       Mat ud_l, ud_r;
-      cv::remap(img_l_comp, ud_l, _xMapArr_l, _yMapArr_l, CV_INTER_LINEAR);
-      cv::remap(img_r_comp, ud_r, _xMapArr_r, _yMapArr_r, CV_INTER_LINEAR);
+      cv::remap(img_l_comp, ud_l, _xMapArr_l, _yMapArr_l, INTER_LINEAR);
+      cv::remap(img_r_comp, ud_r, _xMapArr_r, _yMapArr_r, INTER_LINEAR);
 
       ud_r.copyTo(_pano);
       ud_l(Rect(1896/2,0, 1896/2+1900/2, _pano.rows)).copyTo(_pano(Rect(1896/2,0, 1896/2+1900/2, _pano.rows)));
@@ -426,6 +442,7 @@ bool FishEyeStitcher::__optimizeSeam(Mat &img1, int begin1, Mat &img2, int begin
 void FishEyeStitcher::__compenLightFO(cv::Mat& imgin, cv::Mat& imgout)
 {
   cv::Mat out_img_double;
+
 //  cv::Mat out_img_double(imgin.size(), imgin.type());
 //  cv::Mat rgb_ch[3];
 //  cv::Mat rgb_ch_double[3];
@@ -439,8 +456,8 @@ void FishEyeStitcher::__compenLightFO(cv::Mat& imgin, cv::Mat& imgout)
 //  rgb_ch_double[2] = rgb_ch_double[2].mul(_scale_map);
 //  cv::merge(rgb_ch_double, 3, out_img_double);
 
-  imgin.convertTo(out_img_double, CV_32F);
-  out_img_double.mul(_scale_map);
+  imgin.convertTo(out_img_double, _scale_map.type());
+  out_img_double = out_img_double.mul(_scale_map);
 
   out_img_double.convertTo(imgout, CV_8UC3);
 
@@ -533,13 +550,20 @@ void FishEyeStitcher::__genScaleMap()
     cv::hconcat(scale_map_quad_2, scale_map_quad_1, quad_21);
     cv::hconcat(scale_map_quad_3, scale_map_quad_4, quad_34);
     //
+//    cv::vconcat(quad_21, quad_34, _scale_map);
     Mat single_channel;
     Mat channels[3];
     cv::vconcat(quad_21, quad_34, single_channel);
+
     channels[0] = single_channel.clone();
     channels[1] = single_channel.clone();
     channels[2] = single_channel.clone();
     cv::merge(channels, 3, _scale_map);
+
+//    FileStorage cvfs;
+//    cvfs.open("./scalemap_test.yml", FileStorage::WRITE);
+//    cvfs.write("_scale_map",channels[2]);
+//    cvfs.release();
 
 }   // genScaleMap()
 
@@ -611,15 +635,15 @@ void FishEyeStitcher::__compenLightFallOff(cv::Rect FixArea, cv::Rect TemplateAr
               double I = ValueBGR2GRAY(d_next[col_next*3], d_next[col_next*3+1], d_next[col_next*3+2]);
 
               double k = 1 / 4.8796;
-              double w1 = k*0.3679 * 1.5;
-              double w2 = k*0.6065 * 1.5;
-              double w3 = k*0.3679 * 1.5;
-              double w4 = k*0.6065 * 1.5;
+              double w1 = k*0.3679;
+              double w2 = k*0.6065;
+              double w3 = k*0.3679;
+              double w4 = k*0.6065;
               double w5 = k*1.0000;
-              double w6 = k*0.6065 / 2;
-              double w7 = k*0.3679 / 2;
-              double w8 = k*0.6065 / 2;
-              double w9 = k*0.3679 / 2;
+              double w6 = k*0.6065;
+              double w7 = k*0.3679;
+              double w8 = k*0.6065;
+              double w9 = k*0.3679;
 
               double neareast_target_gray =
                   w1*A + w2*B + w3*C +
@@ -630,9 +654,9 @@ void FishEyeStitcher::__compenLightFallOff(cv::Rect FixArea, cv::Rect TemplateAr
               double alpha = (col - FixArea.x)*1.0 / FixArea.width*1.0;
               double target_gray = alpha * mean_l + (1-alpha) * mean_r;
               double new_scale =
-                  0.2 * neareast_target_gray / E +
-                  0.05 * neareast_target_gray / ((A + B + D) / 3) +
-                  0.75 * target_gray / mean_FixArea;
+                  0.4 * neareast_target_gray / E +
+                 // 0.05 * neareast_target_gray / ((A + B + D) / 3) +
+                  0.6 * target_gray / mean_FixArea;
 //              cout << "neareast_target_gray: " << neareast_target_gray << endl;
 //              cout << "E: " << E << endl;
 //              cout << "new_scale: " << new_scale << endl;
@@ -640,15 +664,17 @@ void FishEyeStitcher::__compenLightFallOff(cv::Rect FixArea, cv::Rect TemplateAr
 //              cout << "mean_FixArea: " << mean_FixArea << endl;
 //              cout << "current_meam_grays[" << idx << "]: " << current_meam_grays[idx] << endl;
               new_scale = MAX(1.0, new_scale);
-              int mthreshold = 155;
-              if(target_gray > mthreshold){
-                  new_scale = (new_scale - 1) * (1 - (target_gray-mthreshold)*1.0/target_gray) + 1.0;
-                }
+//              int mthreshold = 155;
+//              if(target_gray > mthreshold){
+//                  new_scale = (new_scale - 1) * (1 - (target_gray-mthreshold)*1.0/target_gray) + 1.0;
+//                }
 
               double k1 = abs(col - mid_col) * 1.0 / ((FixArea.width * 1.0)/2.0) ; // col --> 0 or 2*mid_col , k1 --> 1
-              d[col * 3] = (1 - k1) * MIN(d[col * 3]*new_scale + 0.5, 255.0) + k1 * d[col * 3];
-              d[col * 3 + 1] = (1 - k1) * MIN(d[col * 3 + 1]*new_scale + 0.5, 255.0) + k1 * d[col * 3 + 1];
-              d[col * 3 + 2] = (1 - k1) * MIN(d[col * 3 + 2]*new_scale + 0.5, 255.0) + k1 * d[col * 3 + 2];
+              k1 = 1-k1;
+              // double k1 = cos((_PI/2.0*mid_col)*(col-mid_col));       // col --> mid_col , k1 --> 1
+              d[col * 3] = k1 * MIN(d[col * 3]*new_scale, 255.0) + (1 - k1) * d[col * 3] + 0.5;
+              d[col * 3 + 1] = k1 * MIN(d[col * 3 + 1]*new_scale, 255.0) + (1 - k1) * d[col * 3 + 1] + 0.5;
+              d[col * 3 + 2] = k1 * MIN(d[col * 3 + 2]*new_scale, 255.0) + (1 - k1) * d[col * 3 + 2] + 0.5;
 
             } // cols
         } // rows
