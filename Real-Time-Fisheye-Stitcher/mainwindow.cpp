@@ -14,8 +14,8 @@ MainWindow::MainWindow(QWidget *parent) :
       exit(-1);
     }
   printf("test generate\n");
-  mStitcher.TestGenerate(2);
-//  mStitcher.TestGenerateVideo();
+//  mStitcher.TestGenerate(2);
+  mStitcher.TestGenerateVideo();
   //maintest("./HistoTset/reference.jpg", "./HistoTset/input.jpg", "./reverseTest.jpg");
 }
 

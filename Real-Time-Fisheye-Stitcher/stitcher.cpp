@@ -296,7 +296,7 @@ void FishEyeStitcher::TestGenerate(int type){
 
 void FishEyeStitcher::TestGenerateVideo(){
   string prefix = "/home/fleschier/programes/Videos/gear360/";
-  string videoname = "360_0108";
+  string videoname = "360_0106";
   VideoCapture cap;
   cap.open(prefix+videoname+".MP4");
   VideoWriter writer;
@@ -328,20 +328,30 @@ void FishEyeStitcher::TestGenerateVideo(){
       cv::remap(img_l_comp, ud_l, _xMapArr_l, _yMapArr_l, INTER_LINEAR);
       cv::remap(img_r_comp, ud_r, _xMapArr_r, _yMapArr_r, INTER_LINEAR);
 
+      // histograme match
+      auto histo_begin = system_clock::now();
+      __histoConvert(ud_l, ud_r);
+    //  __blockHistoConvert(ud_l, ud_r);
+      auto histo_end = system_clock::now();
+      auto histo_duration = duration_cast<microseconds>(histo_end - histo_begin);
+      cout << "histogram convert spends "
+           << double(histo_duration.count()) * microseconds::period::num / microseconds::period::den
+           << " seconds" << endl;
+
       ud_r.copyTo(_pano);
       ud_l(Rect(1896/2,0, 1896/2+1900/2, _pano.rows)).copyTo(_pano(Rect(1896/2,0, 1896/2+1900/2, _pano.rows)));
        __optimizeSeam(ud_l, 1896/2-_overlap, ud_r, 1896+1900/2-_overlap,_pano,2*_overlap);
 
-       // light fall off compnesation
-       int template_area_width = 600;
-       int bias_width = 50;
-       int bottom_top_cut = 300;
-       __compenLightFallOff(Rect(1896/2-_overlap-bias_width,0,2*(_overlap+bias_width),_pano.rows),
-                            Rect(1896/2-_overlap-bias_width-template_area_width,bottom_top_cut,template_area_width+bias_width,_pano.rows-2*bottom_top_cut),
-                            Rect(1896/2+_overlap,bottom_top_cut,template_area_width+bias_width,_pano.rows-2*bottom_top_cut));
-       __compenLightFallOff(Rect(1896+1900/2-_overlap-bias_width,0,2*(_overlap+bias_width),_pano.rows),
-                            Rect(1896+1900/2-_overlap-bias_width-template_area_width,bottom_top_cut,template_area_width+bias_width,_pano.rows-2*bottom_top_cut),
-                            Rect(1896+1900/2+_overlap,bottom_top_cut,template_area_width+bias_width,_pano.rows-2*bottom_top_cut));
+//       // light fall off compnesation
+//       int template_area_width = 600;
+//       int bias_width = 50;
+//       int bottom_top_cut = 300;
+//       __compenLightFallOff(Rect(1896/2-_overlap-bias_width,0,2*(_overlap+bias_width),_pano.rows),
+//                            Rect(1896/2-_overlap-bias_width-template_area_width,bottom_top_cut,template_area_width+bias_width,_pano.rows-2*bottom_top_cut),
+//                            Rect(1896/2+_overlap,bottom_top_cut,template_area_width+bias_width,_pano.rows-2*bottom_top_cut));
+//       __compenLightFallOff(Rect(1896+1900/2-_overlap-bias_width,0,2*(_overlap+bias_width),_pano.rows),
+//                            Rect(1896+1900/2-_overlap-bias_width-template_area_width,bottom_top_cut,template_area_width+bias_width,_pano.rows-2*bottom_top_cut),
+//                            Rect(1896+1900/2+_overlap,bottom_top_cut,template_area_width+bias_width,_pano.rows-2*bottom_top_cut));
 
        writer.write(_pano);
     }
