@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "stitcher.h"
+#include "HistgramMatch/HistogramMatching.h"
 
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
@@ -15,6 +16,7 @@ MainWindow::MainWindow(QWidget *parent) :
   printf("test generate\n");
   mStitcher.TestGenerate(2);
 //  mStitcher.TestGenerateVideo();
+  //maintest("./HistoTset/reference.jpg", "./HistoTset/input.jpg", "./reverseTest.jpg");
 }
 
 MainWindow::~MainWindow()

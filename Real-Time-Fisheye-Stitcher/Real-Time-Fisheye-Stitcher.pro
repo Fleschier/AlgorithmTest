@@ -29,11 +29,13 @@ LIBS += /usr/local/lib/libopencv*.so
 
 
 SOURCES += \
+    HistgramMatch/HistogramMatching.cpp \
         main.cpp \
         mainwindow.cpp \
     stitcher.cpp
 
 HEADERS += \
+    HistgramMatch/HistogramMatching.h \
         mainwindow.h \
     stitcher.h \
     threadsafe_queue.hpp

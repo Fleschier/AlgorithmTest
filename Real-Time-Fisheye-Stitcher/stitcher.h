@@ -84,6 +84,10 @@ private:
 
   cv::Mat _scale_map;
 
+  int _divid_idx_l = 1896/2;
+  int _divid_idx_r = 1896+1900/2;
+  int _img_l_w = 1896/2+1900/2;
+
 private:
   // param: position: 0 ==> left, 1 ==> right
   bool __optimizeSeam(cv::Mat& img1, int begin1, cv::Mat& img2, int begin2, cv::Mat& pano, cv::Mat& roi, int ProcessWidth, int position);
@@ -96,6 +100,12 @@ private:
   void __genScaleMap();
   // dynamic real-time light fall-off compensatoin function
   void __compenLightFallOff(cv::Rect FixArea, cv::Rect TemplateArea_l, cv::Rect TemplateArea_r);
+  bool __histoConvert(cv::Mat& img_l, cv::Mat& img_r);
+  void __blockHistoConvert(cv::Mat& img_l, cv::Mat& img_r);
+  void __globalLightCompo(cv::Mat& img_l, cv::Mat& img_r);
+
+  void __biasFuseAscend(cv::Mat& img1, cv::Mat& img2, cv::Rect rc1, cv::Rect rc2);
+  void __biasFuseDescend(cv::Mat& img1, cv::Mat& img2, cv::Rect rc1, cv::Rect rc2);
 public:
   FishEyeStitcher();
   bool Init();
