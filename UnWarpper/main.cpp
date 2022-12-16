@@ -128,7 +128,7 @@ int main( int argc, char *argv[] )
 #ifdef _DEBUG
 	// show input frame
 	namedWindow("Input Frame", WINDOW_NORMAL);
-	imshow( "Input Frame", inputFrame );
+    //imshow( "Input Frame", inputFrame );
 #endif
 
 	// allocate transfomation maps
@@ -202,7 +202,7 @@ int main( int argc, char *argv[] )
 	      // test left
 	      Cx = 957;
 	      Cy = 970;
-	      R = 914;
+          R = 1009;
 	    }
 
 	    Mat tempFrame = inputFrame.clone();
@@ -211,7 +211,7 @@ int main( int argc, char *argv[] )
 		cout << "\nPlease mark 12 points on the boundary of the circle\n\n";
 
 		// show input frame for marking circle
-		imshow( "Input Frame", tempFrame);
+        //imshow( "Input Frame", tempFrame);
 
 		// initialize point list
 		g_cClicks = 0;
@@ -247,7 +247,7 @@ int main( int argc, char *argv[] )
 				}
 			}
 
-			imshow( "Input Frame", tempFrame );
+            //imshow( "Input Frame", tempFrame );
 		}while( aPoints.size() < nNumPoints );
 
 		// reset the mouse callback
@@ -314,7 +314,7 @@ int main( int argc, char *argv[] )
 	    cout << "Cx = " << Cx << ", Cy = " << Cy << ", R = " << R << endl;
 	    // draw computed circle
 	    circle( tempFrame, Point( Cx, Cy ), R, CV_RGB( 0, 255, 0 ), 1);
-	    imshow( "Input Frame", tempFrame );
+        //imshow( "Input Frame", tempFrame );
 	    imwrite("180degree_lin.jpg", tempFrame);
 	    cv::waitKey();
 #endif
@@ -366,7 +366,7 @@ int main( int argc, char *argv[] )
 
 	// transform image
 	Mat tempFrame( inputFrame.rows, inputFrame.cols, inputFrame.type() );
-	remap( inputFrame, tempFrame, transformMapX, transformMapY, CV_INTER_CUBIC, BORDER_CONSTANT );
+    remap( inputFrame, tempFrame, transformMapX, transformMapY, cv::INTER_CUBIC, BORDER_CONSTANT );
 
 	if( MIDPOINTCIRCLE == eMethod )
 	  {
@@ -460,7 +460,7 @@ int main( int argc, char *argv[] )
 	    // save output file
 	    imwrite( "temp.jpg", tempFrame );
 
-	    remap( tempFrame, outputFrame, transformMapX, transformMapY, CV_INTER_LINEAR, BORDER_CONSTANT );
+        remap( tempFrame, outputFrame, transformMapX, transformMapY, cv::INTER_LINEAR, BORDER_CONSTANT );
 	  }
 	else
 	  {
@@ -472,7 +472,7 @@ int main( int argc, char *argv[] )
 
 #ifdef _DEBUG
 	// show output frame
-	imshow( "Output Frame", outputFrame );
+    //imshow( "Output Frame", outputFrame );
 	waitKey();
 #endif
 

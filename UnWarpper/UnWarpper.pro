@@ -25,6 +25,6 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 INCLUDEPATH += /usr/local/include/opencv4/ \
             += /usr/local/include/opencv4/opencv2/ \
-            += /usr/include/eigen3/
+            # += /usr/include/eigen3/
 
 LIBS += /usr/local/lib/libopencv*.so

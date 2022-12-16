@@ -114,6 +114,27 @@ void histogramMatchingChannel(const cv::Mat& inputChannel,
 	}
 }
 
+void thresholdFilter(Mat& target, Mat& origin, double m_threshold, double control_ratio){
+    assert(target.cols == origin.cols && target.channels() == origin.channels() == 1);
+
+    double curr_ratio;
+    for (int row = 0; row < target.rows; row++){
+        uchar* src = origin.ptr<uchar>(row);
+        uchar* dst = target.ptr<uchar>(row);
+
+        for (int col = 0; col < target.cols; col++){
+            curr_ratio = dst[col]*1.0/src[col]*1.0;
+
+            if(curr_ratio > m_threshold || curr_ratio < 1){
+                //dst[col] = dst[col]>src[col] ? MIN(src[col]*m_threshold+0.5,255) : MIN(src[col]*1.0/m_threshold+0.5,255);
+                // printf("current ratio: %f \n", curr_ratio);
+                dst[col] = MIN(src[col]*control_ratio, 254);
+            }
+          }
+
+      }
+}
+
 bool histogramMatching(const cv::Mat& inputImage,
 	const cv::Mat& referenceImage, cv::Mat& outputImage)
 {
@@ -135,12 +156,12 @@ bool histogramMatching(const cv::Mat& inputImage,
 //    cv::merge(outputChannels, outputImage);
 
     // convert to HSV , only modify V which means light, vary from 0 - 100
-    cv::Mat HSV_input, HSV_ref;
-    cvtColor(inputImage, HSV_input, COLOR_BGR2HSV);
-    cvtColor(referenceImage, HSV_ref, COLOR_BGR2HSV);
+    cv::Mat YCrCb_input, YCrCb_ref;
+    cvtColor(inputImage, YCrCb_input, COLOR_BGR2YCrCb);
+    cvtColor(referenceImage, YCrCb_ref, COLOR_BGR2YCrCb);
     std::vector<cv::Mat> inputChannels, referenceChannels, outputChannels;
-    cv::split(HSV_input, inputChannels);
-    cv::split(HSV_ref, referenceChannels);
+    cv::split(YCrCb_input, inputChannels);
+    cv::split(YCrCb_ref, referenceChannels);
     if (inputChannels.size() != referenceChannels.size())
     {
         std::cerr << "Channel of input image isn't the same reference image" << std::endl;
@@ -149,11 +170,18 @@ bool histogramMatching(const cv::Mat& inputImage,
 
 
     cv::Mat output;
-    histogramMatchingChannel(inputChannels[2], referenceChannels[2], output);
+    histogramMatchingChannel(inputChannels[0], referenceChannels[0], output);
 
-    inputChannels[2] = output;
+    double mean_gray_input, mean_gray_ref;
+    mean_gray_input = cv::mean(inputChannels[0])[0];
+    mean_gray_ref = cv::mean(referenceChannels[0])[0];
+    double ratio = MAX(mean_gray_ref*1.0/mean_gray_input,1);
+    double m_threshold = 1.3;
+    thresholdFilter(output, inputChannels[0], m_threshold, ratio);
+
+    inputChannels[0] = output;
     cv::merge(inputChannels, outputImage);
-    cvtColor(outputImage, outputImage, COLOR_HSV2BGR);
+    cvtColor(outputImage, outputImage, COLOR_YCrCb2BGR);
 
 	return true;
 }

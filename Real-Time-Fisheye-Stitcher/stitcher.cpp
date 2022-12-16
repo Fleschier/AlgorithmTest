@@ -111,14 +111,16 @@ bool FishEyeStitcher::__preProcessThread(int area_idx){
 #if TESTGENERATE
 void FishEyeStitcher::TestGenerate(int type){
 
-  Mat test = imread("/home/fleschier/programes/Pictures/gear360/lab_data/360_0103.jpg");
+  string prefix = "/home/fleschier/programes/Pictures/gear360/lab_data/";
+  string imgname = "360_0103";
+  Mat test = imread(prefix+imgname+".jpg");
   Mat img_l = test(rc_l);
   bitwise_and(img_l, _valid_area_mask, img_l);
   Mat img_r = test(rc_r);
   bitwise_and(img_r, _valid_area_mask, img_r);
   Mat img_l_comp, img_r_comp;
 
-  bool pre_light_compen = true;
+  bool pre_light_compen = false;
   if(pre_light_compen){
       __compenLightFO(img_l, img_l_comp);
       __compenLightFO(img_r, img_r_comp);
@@ -288,7 +290,7 @@ void FishEyeStitcher::TestGenerate(int type){
   }
 
   //  cv::imshow("pano", _pano);
-  cv::imwrite("/home/fleschier/programes/Pictures/gear360/lab_data/360_0103_pano.jpg", _pano);
+  cv::imwrite(prefix+imgname+"_pano.jpg", _pano);
   //  cv::imwrite("/home/cyx/programes/Pictures/gear360/lab_data/360_0103_roi_r.jpg", roi_r);
 
 //  cv::waitKey();
@@ -296,7 +298,7 @@ void FishEyeStitcher::TestGenerate(int type){
 
 void FishEyeStitcher::TestGenerateVideo(){
   string prefix = "/home/fleschier/programes/Videos/gear360/";
-  string videoname = "360_0106";
+  string videoname = "360_0108";
   VideoCapture cap;
   cap.open(prefix+videoname+".MP4");
   VideoWriter writer;
@@ -746,8 +748,8 @@ bool FishEyeStitcher::__histoConvert(cv::Mat& img_l, cv::Mat& img_r){
 //    }
 
     // way 2
-    int processWidth = 3*_overlap;
-    int templateWidth = 2*_overlap;
+    int processWidth = 2*_overlap+20;
+    int templateWidth = 1*_overlap;
     Rect rc_l = Rect(_divid_idx_l-_overlap,0,processWidth,img_l.rows);        // left overlap area rect
     Rect rc_tp_ll = Rect(rc_l.x-templateWidth,rc_l.y,templateWidth,rc_l.height);
     Rect rc_tp_lr = Rect(rc_l.x+processWidth,rc_l.y,templateWidth,rc_l.height);
@@ -840,7 +842,7 @@ void FishEyeStitcher::__biasFuseAscend(cv::Mat &img1, cv::Mat &img2, cv::Rect rc
 
         for (int col = 0; col < rc1.width; col++){
             //img1中像素的权重，与当前处理点距重叠区域左边界的距离成正比
-            alpha = col*1.0 / rc1.width*1.0;
+            alpha = sqrt(col*1.0 / rc1.width*1.0);
             //alpha = sin(col*_PI/(2*rc1.width*1.0));
             int src_x = col + rc1.x;
             int dst_x = col + rc2.x;
@@ -863,7 +865,7 @@ void FishEyeStitcher::__biasFuseDescend(cv::Mat &img1, cv::Mat &img2, cv::Rect r
         uchar* dst = img2.ptr<uchar>(row);
 
         for (int col = 0; col < rc1.width; col++){
-            alpha = (rc1.width - col)*1.0 / rc1.width*1.0;
+            alpha = sqrt((rc1.width - col)*1.0 / rc1.width*1.0);
             //alpha = cos(col*_PI/(2*rc1.width*1.0));
             int src_x = col + rc1.x;
             int dst_x = col + rc2.x;
