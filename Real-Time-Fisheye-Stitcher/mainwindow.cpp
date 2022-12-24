@@ -14,9 +14,13 @@ MainWindow::MainWindow(QWidget *parent) :
       exit(-1);
     }
   printf("test generate\n");
-  //mStitcher.TestGenerate(2);
-  mStitcher.TestGenerateVideo();
+  mStitcher.TestGenerate(2);
+  //mStitcher.TestGenerateVideo();
   //maintest("./HistoTset/reference.jpg", "./HistoTset/input.jpg", "./reverseTest.jpg");
+//  QImage qimg("/home/fleschier/programes/Pictures/gear360/lab_data/360_0108_pano.jpg");
+//  ui->label->setScaledContents(true);
+//  ui->label->setPixmap(QPixmap::fromImage(qimg));
+//  ui->label->show();
 }
 
 MainWindow::~MainWindow()
@@ -30,6 +34,11 @@ void MainWindow::on_pushButton_clicked()
 }
 
 void MainWindow::on_pushButton_2_clicked()
+{
+
+}
+
+void MainWindow::on_pushButton_3_clicked()
 {
 
 }
