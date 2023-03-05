@@ -248,7 +248,7 @@ void FishEyeStitcher::TestGenerate(int type){
   // simple linear fuse
   else if(2 == type){
       auto begin = system_clock::now();
-      __optimizeSeam(ud_l, _divid_idx_l-_overlap, ud_r, _divid_idx_r-_overlap,_pano,2*_overlap);
+      __optimizeSeam(ud_l, 1896/2-50, ud_r, 1896+1900/2-40, _pano, 44+50, 48+40);
       auto end = system_clock::now();
       auto duration = duration_cast<microseconds>(end - begin);
       cout << "one frame simple blend spends "
@@ -342,7 +342,8 @@ void FishEyeStitcher::TestGenerateVideo(){
 
       ud_r.copyTo(_pano);
       ud_l(Rect(1896/2,0, 1896/2+1900/2, _pano.rows)).copyTo(_pano(Rect(1896/2,0, 1896/2+1900/2, _pano.rows)));
-       __optimizeSeam(ud_l, 1896/2-_overlap, ud_r, 1896+1900/2-_overlap,_pano,2*_overlap);
+      //__optimizeSeam(ud_l, 1896/2-_overlap, ud_r, 1896+1900/2-_overlap,_pano,2*_overlap);
+      __optimizeSeam(ud_l, 1896/2-50, ud_r, 1896+1900/2-40, _pano, 44+50, 48+40);
 
 //       // light fall off compnesation
 //       int template_area_width = 600;
@@ -427,7 +428,7 @@ bool FishEyeStitcher::__optimizeSeam(cv::Mat& img1, int begin1, cv::Mat& img2, i
   return true;
 }
 
-bool FishEyeStitcher::__optimizeSeam(Mat &img1, int begin1, Mat &img2, int begin2, Mat &pano, int ProcessWidth){
+bool FishEyeStitcher::__optimizeSeam(Mat &img1, int begin1, Mat &img2, int begin2, Mat &pano, int ProcessWidth1, int ProcessWidth2){
   double alpha = 1.0;//img1中像素的权重
 
 #if DEBUGSHOW
@@ -447,20 +448,20 @@ bool FishEyeStitcher::__optimizeSeam(Mat &img1, int begin1, Mat &img2, int begin
       uchar* d = pano.ptr<uchar>(row);
 
       // process left part of multi-band edge
-      for (int col = begin1; col < begin1+ProcessWidth; col++){
+      for (int col = begin1; col < begin1+ProcessWidth1; col++){
           //img1中像素的权重，与当前处理点距重叠区域左边界的距离成正比，实验证明，这种方法确实好
-          alpha = (ProcessWidth - (col - begin1))*1.0 / ProcessWidth;
-          d[col * 3] = MIN(p2[col * 3] * alpha + p1[col * 3] * (1 - alpha), 255);
-          d[col * 3 + 1] = MIN(p2[col * 3 + 1] * alpha + p1[col * 3 + 1] * (1 - alpha), 255);
-          d[col * 3 + 2] = MIN(p2[col * 3 + 2] * alpha + p1[col * 3 + 2] * (1 - alpha), 255);
+          alpha = (ProcessWidth1 - (col - begin1))*1.0 / ProcessWidth1;
+          d[col * 3] = MIN(p2[col * 3] * alpha + p1[col * 3] * (1 - alpha)+1.5, 255);
+          d[col * 3 + 1] = MIN(p2[col * 3 + 1] * alpha + p1[col * 3 + 1] * (1 - alpha)+1.5, 255);
+          d[col * 3 + 2] = MIN(p2[col * 3 + 2] * alpha + p1[col * 3 + 2] * (1 - alpha)+1.5, 255);
 
         }
       // process right part of multi-band edge
-      for (int col = begin2; col < begin2+ProcessWidth; col++){
-          alpha = (ProcessWidth - (col - begin2))*1.0 / ProcessWidth;
-          d[col * 3] = MIN(p1[col * 3] * alpha + p2[col * 3] * (1 - alpha), 255);
-          d[col * 3 + 1] = MIN(p1[col * 3 + 1] * alpha + p2[col * 3 + 1] * (1 - alpha), 255);
-          d[col * 3 + 2] = MIN(p1[col * 3 + 2] * alpha + p2[col * 3 + 2] * (1 - alpha), 255);
+      for (int col = begin2; col < begin2+ProcessWidth2; col++){
+          alpha = (ProcessWidth2 - (col - begin2))*1.0 / ProcessWidth2;
+          d[col * 3] = MIN(p1[col * 3] * alpha + p2[col * 3] * (1 - alpha)+0.5, 255);
+          d[col * 3 + 1] = MIN(p1[col * 3 + 1] * alpha + p2[col * 3 + 1] * (1 - alpha)+0.5, 255);
+          d[col * 3 + 2] = MIN(p1[col * 3 + 2] * alpha + p2[col * 3 + 2] * (1 - alpha)+0.5, 255);
 
         }
     }
@@ -748,37 +749,45 @@ bool FishEyeStitcher::__histoConvert(cv::Mat& img_l, cv::Mat& img_r){
 //    }
 
     // way 2
-    int processWidth = 4*_overlap+40;
+    int processWidth = 4*_overlap;
     int templateWidth = 2*_overlap;
-    Rect rc_l = Rect(_divid_idx_l-processWidth/2,0,processWidth,img_l.rows);        // left overlap area rect
-    Rect rc_tp_ll = Rect(rc_l.x-templateWidth,rc_l.y,templateWidth,rc_l.height);
-    Rect rc_tp_lr = Rect(rc_l.x+processWidth,rc_l.y,templateWidth,rc_l.height);
+    //Rect rc_l = Rect(_divid_idx_l-processWidth/2,0,processWidth,img_l.rows);        // left overlap area rect
+    Rect L_rc_l = Rect(1896/2-50, 0, processWidth, img_l.rows);
+    Rect L_rc_r = Rect(1896+1900/2-(processWidth-48),0,processWidth,img_l.rows);
+    //Rect rc_tp_ll = Rect(rc_l.x-templateWidth,rc_l.y,templateWidth,rc_l.height);
+    //Rect rc_tp_lr = Rect(rc_l.x+processWidth,rc_l.y,templateWidth,rc_l.height);
+    Rect L_rc_tp_rl = Rect(L_rc_r.x-templateWidth,L_rc_r.y,templateWidth,L_rc_r.height);
+    Rect L_rc_tp_lr = Rect(L_rc_l.x+processWidth,L_rc_l.y,templateWidth,L_rc_l.height);
 
-    Rect rc_r = Rect(_divid_idx_r-processWidth/2,0,processWidth,img_r.rows);        // right overlap area rect
-    Rect rc_tp_rl = Rect(rc_r.x-templateWidth,rc_r.y,templateWidth,rc_r.height);
-    Rect rc_tp_rr = Rect(rc_r.x+processWidth,rc_r.y,templateWidth,rc_r.height);
+    //Rect rc_r = Rect(_divid_idx_r-processWidth/2,0,processWidth,img_r.rows);        // right overlap area rect
+    Rect R_rc_l = Rect(1896/2-(processWidth-44),0,processWidth,img_r.rows);
+    Rect R_rc_r = Rect(1896+1900/2-40,0,processWidth,img_r.rows);
+    //Rect rc_tp_rl = Rect(rc_r.x-templateWidth,rc_r.y,templateWidth,rc_r.height);
+    //Rect rc_tp_rr = Rect(rc_r.x+processWidth,rc_r.y,templateWidth,rc_r.height);
+    Rect R_rc_tp_ll = Rect(R_rc_l.x-templateWidth,R_rc_l.y,templateWidth,R_rc_l.height);
+    Rect R_rc_tp_rr = Rect(R_rc_r.x+processWidth,R_rc_r.y,templateWidth,R_rc_r.height);
 
     Mat cache;
     // compensate left img left overlap area's left part with the reference of right img left overlap area's left part
-    histogramMatching(img_l(rc_l), img_l(rc_tp_lr), cache);
-    __biasFuseDescend(img_l, cache, rc_l, Rect(0,0,cache.cols,cache.rows));
-    //__biasFuseDescend(img_l, cache, Rect(_divid_idx_l,0,processWidth/2,img_l.rows), Rect(cache.cols/2,0,cache.cols/2,cache.rows));
-    cache.copyTo(img_l(rc_l));
+    histogramMatching(img_l(L_rc_l), img_l(L_rc_tp_lr), cache);
+    //__biasFuseDescend(img_l, cache, L_rc_l, Rect(0,0,cache.cols,cache.rows));
+    //__biasFuseDescend(img_l, cache, Rect(1896/2+44,0,processWidth-94,img_l.rows), Rect(94,0,processWidth-94,cache.rows));    // only fuse the area out of overlap
+    cache.copyTo(img_l(L_rc_l));
 
-    histogramMatching(img_r(rc_l), img_r(rc_tp_ll), cache);
-    __biasFuseAscend(img_r, cache, rc_l, Rect(0,0,cache.cols,cache.rows));
-    //__biasFuseAscend(img_r, cache, Rect(_divid_idx_l-processWidth/2,0,processWidth/2,img_l.rows), Rect(0,0,cache.cols/2,cache.rows));
-    cache.copyTo(img_r(rc_l));
+    histogramMatching(img_r(R_rc_l), img_r(R_rc_tp_ll), cache);
+    //__biasFuseAscend(img_r, cache, R_rc_l, Rect(0,0,cache.cols,cache.rows));
+    //__biasFuseAscend(img_r, cache, Rect(1896/2+44-processWidth,0,processWidth-94,img_r.rows), Rect(0,0,processWidth-94,cache.rows));
+    cache.copyTo(img_r(R_rc_l));
 
-    histogramMatching(img_l(rc_r), img_l(rc_tp_rl), cache);
-    __biasFuseAscend(img_l, cache, rc_r, Rect(0,0,cache.cols,cache.rows));
-    //__biasFuseAscend(img_l, cache, Rect(_divid_idx_r-processWidth/2,0,processWidth/2,img_r.rows), Rect(0,0,cache.cols/2,cache.rows));
-    cache.copyTo(img_l(rc_r));
+    histogramMatching(img_l(L_rc_r), img_l(L_rc_tp_rl), cache);
+    //__biasFuseAscend(img_l, cache, L_rc_r, Rect(0,0,cache.cols,cache.rows));
+    //__biasFuseAscend(img_l, cache, Rect(1896+1900/2+48-processWidth,0,processWidth-88,img_l.rows), Rect(0,0,processWidth-88,cache.rows));
+    cache.copyTo(img_l(L_rc_r));
 
-    histogramMatching(img_r(rc_r), img_r(rc_tp_rr), cache);
-    __biasFuseDescend(img_r, cache, rc_r, Rect(0,0,cache.cols,cache.rows));
-    //__biasFuseDescend(img_r, cache, Rect(_divid_idx_r,0,processWidth/2,img_r.rows), Rect(cache.cols/2,0,cache.cols/2,cache.rows));
-    cache.copyTo(img_r(rc_r));
+    histogramMatching(img_r(R_rc_r), img_r(R_rc_tp_rr), cache);
+    //__biasFuseDescend(img_r, cache, R_rc_r, Rect(0,0,cache.cols,cache.rows));
+    //__biasFuseDescend(img_r, cache, Rect(1896+1900/2+48,0,processWidth-88,img_r.rows), Rect(88,0,processWidth-88,cache.rows));
+    cache.copyTo(img_r(R_rc_r));
 
     return true;
 }
@@ -846,8 +855,8 @@ void FishEyeStitcher::__biasFuseAscend(cv::Mat &img1, cv::Mat &img2, cv::Rect rc
 
         for (int col = 0; col < rc1.width; col++){
             //img1中像素的权重，与当前处理点距重叠区域左边界的距离成正比
-            alpha = sqrt(col*1.0 / rc1.width*1.0);
-            //alpha = col*1.0 / rc1.width*1.0;
+            //alpha = sqrt(col*1.0 / rc1.width*1.0);
+            alpha = col*1.0 / rc1.width*1.0;
             //alpha = sin(col*_PI/(2*rc1.width*1.0));
             int src_x = col + rc1.x;
             int dst_x = col + rc2.x;
@@ -870,8 +879,8 @@ void FishEyeStitcher::__biasFuseDescend(cv::Mat &img1, cv::Mat &img2, cv::Rect r
         uchar* dst = img2.ptr<uchar>(row);
 
         for (int col = 0; col < rc1.width; col++){
-            alpha = sqrt((rc1.width - col)*1.0 / rc1.width*1.0);
-            //alpha = (rc1.width - col)*1.0 / rc1.width*1.0;
+            //alpha = sqrt((rc1.width - col)*1.0 / rc1.width*1.0);
+            alpha = (rc1.width - col)*1.0 / rc1.width*1.0;
             //alpha = cos(col*_PI/(2*rc1.width*1.0));
             int src_x = col + rc1.x;
             int dst_x = col + rc2.x;

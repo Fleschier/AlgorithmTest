@@ -91,7 +91,7 @@ private:
 private:
   // param: position: 0 ==> left, 1 ==> right
   bool __optimizeSeam(cv::Mat& img1, int begin1, cv::Mat& img2, int begin2, cv::Mat& pano, cv::Mat& roi, int ProcessWidth, int position);
-  bool __optimizeSeam(cv::Mat& img1, int begin1, cv::Mat& img2, int begin2, cv::Mat& pano, int ProcessWidth);
+  bool __optimizeSeam(cv::Mat& img1, int begin1, cv::Mat& img2, int begin2, cv::Mat& pano, int ProcessWidth1, int ProcessWidth2);
   bool __captureThread();
   // param: area_idx: 0 ==> left_fisheye ; 1 ==> right_fisheye
   bool __preProcessThread(int area_idx);

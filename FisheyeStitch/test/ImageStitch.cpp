@@ -56,8 +56,8 @@ int fullStitchTest()
 ////    imgs.push_back(imread("/home/cyx/programes/C++/fisheye/extract_frames/fullcam2_unwarp.jpg"));
 //    imgs.push_back(imread("/home/cyx/programes/C++/fisheye/extract_frames/fullcam3_unwarp.jpg"));
 
-    imgs.push_back(imread("/home/cyx/programes/Pictures/123.jpg"));
-    imgs.push_back(imread("/home/cyx/programes/Pictures/456.jpg"));
+    imgs.push_back(imread("/home/cyx/programes/Pictures/l0001.jpg"));
+    imgs.push_back(imread("/home/cyx/programes/Pictures/r0001.jpg"));
 
     int num_images = imgs.size();    //图像数量
     cout<<"图像数量为"<<num_images<<endl;

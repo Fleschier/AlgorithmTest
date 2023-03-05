@@ -2,6 +2,9 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QTimer>
+#include <opencv.hpp>
+#include <QLabel>
 
 namespace Ui {
   class MainWindow;
@@ -15,6 +18,8 @@ public:
   explicit MainWindow(QWidget *parent = 0);
   ~MainWindow();
 
+public slots:
+    void updateImage();
 private slots:
   void on_pushButton_clicked();
 
@@ -24,6 +29,12 @@ private slots:
 
 private:
   Ui::MainWindow *ui;
+  QTimer theTimer;
+  cv::Mat srcImage;
+  cv::VideoCapture videoCap;
+  QLabel *imageLabel;
+protected:
+    void paintEvent(QPaintEvent *e);
 };
 
 #endif // MAINWINDOW_H
